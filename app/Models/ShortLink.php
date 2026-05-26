@@ -13,6 +13,10 @@ class ShortLink extends Model
 
     public const REDIRECT_META = 'meta';
 
+    public const SOURCE_WEB = 'web';
+
+    public const SOURCE_API = 'api';
+
     /** @var list<string> */
     public const REDIRECT_MODES = [
         self::REDIRECT_DIRECT,
@@ -28,6 +32,7 @@ class ShortLink extends Model
         'bridge_delay_seconds',
         'page_title',
         'thumbnail_url',
+        'source',
         'user_agent',
         'ip_address',
         'clicks',
@@ -82,6 +87,19 @@ class ShortLink extends Model
         $mode = strtolower(trim((string) $mode));
 
         return in_array($mode, self::REDIRECT_MODES, true) ? $mode : self::REDIRECT_BRIDGE;
+    }
+
+    public static function normalizeSource(?string $source, string $default = self::SOURCE_WEB): string
+    {
+        $source = strtolower(trim((string) $source));
+
+        if ($source === '') {
+            return $default;
+        }
+
+        $source = preg_replace('/[^a-z0-9_-]/', '', $source) ?? '';
+
+        return $source !== '' ? substr($source, 0, 64) : $default;
     }
 
     public function getConnectionName(): ?string

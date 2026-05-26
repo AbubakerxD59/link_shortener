@@ -111,11 +111,30 @@
             box-shadow: 0 4px 14px var(--accent-glow);
         }
 
-        .header-tag {
-            font-size: 0.75rem;
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .header-nav a {
+            font-size: 0.875rem;
             font-weight: 500;
             color: var(--muted);
-            letter-spacing: 0.02em;
+            text-decoration: none;
+            padding: 0.5rem 0.875rem;
+            border-radius: var(--radius-pill);
+            transition: color 0.2s, background 0.2s;
+        }
+
+        .header-nav a:hover {
+            color: var(--ink);
+            background: var(--surface);
+        }
+
+        .header-nav a.active {
+            color: var(--accent);
+            background: var(--accent-soft);
         }
 
         .site-footer {
@@ -248,7 +267,10 @@
                 <span class="logo-mark">SL</span>
                 {{ config('app.name', 'ShrtLnk') }}
             </a>
-            <span class="header-tag">URL shortener</span>
+            <nav class="header-nav" aria-label="Main">
+                <a href="{{ route('home') }}" @if(request()->routeIs('home')) class="active" @endif>Home</a>
+                <a href="{{ route('docs') }}" @if(request()->routeIs('docs')) class="active" @endif>API Docs</a>
+            </nav>
         </div>
     </header>
 

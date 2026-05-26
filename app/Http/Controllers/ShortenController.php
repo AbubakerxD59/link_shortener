@@ -24,6 +24,9 @@ class ShortenController extends Controller
             null,
             $userAgent,
             $request->ip(),
+            null,
+            null,
+            ShortLink::SOURCE_WEB,
         );
 
         if (! $result['success']) {

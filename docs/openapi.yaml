@@ -1,0 +1,229 @@
+openapi: 3.0.3
+info:
+  title: Link Shortener API
+  description: |
+    Create cloaked short links with bridge-page previews.
+
+    - All new links use `redirect_mode: bridge` (manual Continue, no auto-redirect).
+    - Prefer `POST /api/links` for server-to-server integrations (no CSRF).
+  version: 1.0.0
+
+servers:
+  - url: '{appUrl}'
+    description: Application URL (set APP_URL in .env)
+    variables:
+      appUrl:
+        default: http://localhost:8000
+
+paths:
+  /api/links:
+    post:
+      summary: Create or resolve a short link
+      operationId: createShortLink
+      tags:
+        - Short links
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShortLinkRequest'
+            example:
+              original_url: https://example.com/article
+              user_id: 42
+              user_agent: MyApp/1.0
+              ip_address: 127.0.0.1
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateShortLinkRequest'
+      responses:
+        '201':
+          description: New short link created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShortLinkSuccess'
+        '200':
+          description: Existing short link returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShortLinkSuccess'
+        '422':
+          description: Validation error or invalid URL
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ValidationError'
+                  - $ref: '#/components/schemas/BusinessError'
+
+  /shorten:
+    post:
+      summary: Create short link (web UI)
+      description: Same behavior as `/api/links` with fewer fields. Requires CSRF token for browser requests.
+      operationId: shortenWeb
+      tags:
+        - Short links
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - original_url
+              properties:
+                original_url:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                user_agent:
+                  type: string
+                  maxLength: 65535
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShortLinkSuccess'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ValidationError'
+                  - $ref: '#/components/schemas/BusinessError'
+
+  /s/{code}:
+    get:
+      summary: Open short link (bridge page)
+      description: Returns HTML bridge page. Not JSON.
+      operationId: visitShortLink
+      tags:
+        - Redirect
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-zA-Z0-9]+$'
+      responses:
+        '200':
+          description: Bridge cloaking HTML page
+          content:
+            text/html:
+              schema:
+                type: string
+        '404':
+          description: Short link not found
+
+components:
+  schemas:
+    CreateShortLinkRequest:
+      type: object
+      required:
+        - original_url
+      properties:
+        original_url:
+          type: string
+          format: uri
+          maxLength: 2048
+          example: https://example.com/page
+        user_id:
+          type: integer
+          minimum: 1
+          nullable: true
+        user_agent:
+          type: string
+          maxLength: 65535
+          nullable: true
+        ip_address:
+          type: string
+          format: ipv4
+          nullable: true
+          description: IPv4 or IPv6
+        page_title:
+          type: string
+          maxLength: 500
+          nullable: true
+        thumbnail_url:
+          type: string
+          format: uri
+          maxLength: 2048
+          nullable: true
+        source:
+          type: string
+          maxLength: 64
+          nullable: true
+          description: Origin label (defaults to api). Use web, api, engagyo, etc.
+          example: api
+
+    ShortLinkSuccess:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        id:
+          type: integer
+          example: 1
+        short_url:
+          type: string
+          format: uri
+          example: https://short.example.com/s/abc123
+        short_code:
+          type: string
+          example: abc123
+        original_url:
+          type: string
+          format: uri
+        redirect_mode:
+          type: string
+          enum: [bridge]
+          example: bridge
+        page_title:
+          type: string
+          nullable: true
+        thumbnail_url:
+          type: string
+          format: uri
+          nullable: true
+        source:
+          type: string
+          nullable: true
+          example: api
+        clicks:
+          type: integer
+          example: 0
+        existing:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+    BusinessError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Invalid URL

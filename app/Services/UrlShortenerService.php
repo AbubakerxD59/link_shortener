@@ -17,7 +17,11 @@ class UrlShortenerService
         ?int $userId = null,
         ?string $userAgent = null,
         ?string $ipAddress = null,
+        ?string $pageTitle = null,
+        ?string $thumbnailUrl = null,
+        ?string $source = null,
     ): array {
+        $source = ShortLink::normalizeSource($source, ShortLink::SOURCE_WEB);
         $normalizedUrl = ShortLink::normalizeUrl($originalUrl);
         if ($normalizedUrl === '') {
             return ['success' => false, 'message' => 'Invalid URL'];
@@ -36,7 +40,7 @@ class UrlShortenerService
             ];
         }
 
-        $existing = $this->findExistingShortLink($normalizedUrl, $userId, $userAgent);
+        $existing = $this->findExistingShortLink($normalizedUrl, $userId, $userAgent, $source);
 
         if ($existing) {
             $this->ensureBridgeMode($existing);
@@ -49,7 +53,7 @@ class UrlShortenerService
         }
 
         $shortCode = ShortLink::generateUniqueCode(6);
-        $preview = $this->linkPreview->fetch($normalizedUrl);
+        $preview = $this->resolvePreview($normalizedUrl, $pageTitle, $thumbnailUrl);
 
         $shortLink = ShortLink::create([
             'user_id' => $userId,
@@ -59,6 +63,7 @@ class UrlShortenerService
             'bridge_delay_seconds' => 0,
             'page_title' => $preview['page_title'],
             'thumbnail_url' => $preview['thumbnail_url'],
+            'source' => $source,
             'user_agent' => $userAgent ? substr($userAgent, 0, 65535) : null,
             'ip_address' => $ipAddress,
         ]);
@@ -74,17 +79,38 @@ class UrlShortenerService
         }
     }
 
+    /**
+     * @return array{page_title: ?string, thumbnail_url: ?string}
+     */
+    protected function resolvePreview(string $url, ?string $pageTitle, ?string $thumbnailUrl): array
+    {
+        if ($pageTitle !== null || $thumbnailUrl !== null) {
+            $fetched = $this->linkPreview->fetch($url);
+
+            return [
+                'page_title' => $pageTitle ?? $fetched['page_title'],
+                'thumbnail_url' => $thumbnailUrl ?? $fetched['thumbnail_url'],
+            ];
+        }
+
+        return $this->linkPreview->fetch($url);
+    }
+
     protected function formatSuccessResponse(ShortLink $shortLink, bool $existing): array
     {
         return [
             'success' => true,
+            'id' => $shortLink->id,
             'short_url' => $this->buildShortUrl($shortLink->short_code),
             'short_code' => $shortLink->short_code,
             'original_url' => $shortLink->original_url,
             'redirect_mode' => ShortLink::REDIRECT_BRIDGE,
             'page_title' => $shortLink->page_title,
             'thumbnail_url' => $shortLink->thumbnail_url,
+            'source' => $shortLink->source,
+            'clicks' => $shortLink->clicks,
             'existing' => $existing,
+            'created_at' => $shortLink->created_at?->toIso8601String(),
         ];
     }
 
@@ -92,8 +118,16 @@ class UrlShortenerService
         string $normalizedUrl,
         ?int $userId,
         ?string $userAgent,
+        string $source,
     ): ?ShortLink {
-        $query = ShortLink::query()->where('original_url', $normalizedUrl);
+        $query = ShortLink::query()
+            ->where('original_url', $normalizedUrl)
+            ->where(function ($q) use ($source) {
+                $q->where('source', $source);
+                if ($source === ShortLink::SOURCE_WEB) {
+                    $q->orWhereNull('source');
+                }
+            });
 
         if ($userId !== null) {
             return $query->where('user_id', $userId)->first();
