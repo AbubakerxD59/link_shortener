@@ -59,7 +59,7 @@
             display: block;
             width: 100%;
             aspect-ratio: 16 / 9;
-            object-fit: cover;
+            object-fit: contain;
             background: #e4e4e7;
         }
         .preview-body {
