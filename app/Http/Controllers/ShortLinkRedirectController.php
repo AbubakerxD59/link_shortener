@@ -22,14 +22,12 @@ class ShortLinkRedirectController extends Controller
 
         $destinationUrl = $shortLink->original_url;
         $destinationHost = parse_url($destinationUrl, PHP_URL_HOST) ?? $destinationUrl;
-        $delaySeconds = 5;
 
         $shortLink->ensureLinkPreview($this->linkPreview);
 
         return view('redirect.bridge', [
             'destinationUrl' => $destinationUrl,
             'destinationHost' => $destinationHost,
-            'delaySeconds' => $delaySeconds,
             'pageTitle' => $shortLink->displayTitle($destinationHost),
             'thumbnailUrl' => $shortLink->thumbnail_url,
         ]);

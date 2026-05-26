@@ -505,7 +505,7 @@
                 <div class="feature-card">
                     <div class="feature-icon">🛡️</div>
                     <h3>Link cloaking</h3>
-                    <p>Every link uses a bridge page with title and thumbnail preview. The destination stays hidden until visitors continue or auto-redirect after 5 seconds.</p>
+                    <p>Every link uses a bridge page with title and thumbnail preview. The destination stays hidden until visitors click Continue.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📊</div>

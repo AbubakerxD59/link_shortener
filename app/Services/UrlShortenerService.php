@@ -56,7 +56,7 @@ class UrlShortenerService
             'short_code' => $shortCode,
             'original_url' => $normalizedUrl,
             'redirect_mode' => ShortLink::REDIRECT_BRIDGE,
-            'bridge_delay_seconds' => 5,
+            'bridge_delay_seconds' => 0,
             'page_title' => $preview['page_title'],
             'thumbnail_url' => $preview['thumbnail_url'],
             'user_agent' => $userAgent ? substr($userAgent, 0, 65535) : null,

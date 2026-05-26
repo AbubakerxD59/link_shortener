@@ -96,15 +96,6 @@
             font-size: 0.875rem;
             line-height: 1.6;
         }
-        .countdown {
-            font-size: 0.8125rem;
-            color: var(--muted);
-            margin-bottom: 1.25rem;
-        }
-        .countdown strong {
-            color: var(--accent);
-            font-variant-numeric: tabular-nums;
-        }
         .btn-continue {
             display: inline-flex;
             align-items: center;
@@ -125,9 +116,6 @@
             box-shadow: 0 6px 20px rgba(109, 40, 217, 0.4);
         }
     </style>
-    @if ($delaySeconds > 0)
-        <meta http-equiv="refresh" content="{{ $delaySeconds }};url={{ e($destinationUrl, false) }}">
-    @endif
 </head>
 <body>
     <div class="card">
@@ -152,28 +140,8 @@
         </article>
 
         <h1>Continue to this link?</h1>
-        <p class="lead">You are leaving {{ parse_url(config('app.url'), PHP_URL_HOST) }}. Click below when you are ready.</p>
-        @if ($delaySeconds > 0)
-            <p class="countdown">Redirecting in <strong id="countdown">{{ $delaySeconds }}</strong> seconds…</p>
-        @endif
+        <p class="lead">You are leaving {{ parse_url(config('app.url'), PHP_URL_HOST) }}. Click Continue when you are ready.</p>
         <a class="btn-continue" id="continue-link" href="{{ $destinationUrl }}" rel="noopener noreferrer">Continue</a>
     </div>
-    @if ($delaySeconds > 0)
-    <script>
-        (function() {
-            var seconds = {{ (int) $delaySeconds }};
-            var dest = @json($destinationUrl);
-            var el = document.getElementById('countdown');
-            var timer = setInterval(function() {
-                seconds -= 1;
-                if (el) el.textContent = Math.max(0, seconds);
-                if (seconds <= 0) {
-                    clearInterval(timer);
-                    window.location.replace(dest);
-                }
-            }, 1000);
-        })();
-    </script>
-    @endif
 </body>
 </html>
