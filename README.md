@@ -4,7 +4,7 @@ Laravel URL shortener with **bridge-page link cloaking**, preview metadata (titl
 
 ## Documentation
 
-- **[API Documentation](/docs)** — styled web reference (also [docs/API.md](docs/API.md))
+- **[API Documentation](/api-docs)** — styled web reference (also [docs/API.md](docs/API.md))
 - **[OpenAPI 3.0 spec](docs/openapi.yaml)** — import into Postman, Swagger UI, or Insomnia
 
 ## Quick start

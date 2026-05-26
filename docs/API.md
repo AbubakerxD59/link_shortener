@@ -10,8 +10,8 @@ All JSON endpoints accept **`Content-Type: application/json`** or **`application
 
 | Format | URL |
 |--------|-----|
-| Web (styled) | `GET /docs` |
-| OpenAPI 3.0 | `GET /api/docs/openapi.yaml` |
+| Web (styled) | `GET /api-docs` |
+| OpenAPI 3.0 | `GET /api-docs/openapi.yaml` |
 
 Source files: `docs/API.md`, `docs/openapi.yaml`, `resources/views/docs/api.blade.php`.
 
@@ -328,8 +328,8 @@ Laravel health endpoint (not part of the shortener API).
 ## Quick reference
 
 ```text
-GET    /docs                API documentation (web UI)
-GET    /api/docs/openapi.yaml   OpenAPI specification
+GET    /api-docs             API documentation (web UI)
+GET    /api-docs/openapi.yaml  OpenAPI specification
 POST   /api/links           Create / resolve short link (integrations)
 POST   /shorten             Create short link (web UI, CSRF)
 GET    /s/{code}            Bridge page → user clicks Continue

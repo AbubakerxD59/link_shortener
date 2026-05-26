@@ -1,4 +1,5 @@
 <?php
+
 use App\Http\Controllers\Api\ShortLinkController;
 use Illuminate\Support\Facades\Route;
 

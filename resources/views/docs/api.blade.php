@@ -311,7 +311,7 @@
             </p>
             <div class="docs-hero-actions">
                 <a href="{{ route('home') }}" class="btn btn-outline">Back to shortener</a>
-                <a href="{{ url('/api/docs/openapi.yaml') }}" class="btn btn-primary" download>OpenAPI spec</a>
+                <a href="{{ route('docs.openapi') }}" class="btn btn-primary" download>OpenAPI spec</a>
             </div>
         </div>
     </section>

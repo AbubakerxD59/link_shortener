@@ -1,10 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class DocumentationController extends Controller
@@ -14,11 +12,6 @@ class DocumentationController extends Controller
         return view('docs.api', [
             'appUrl' => rtrim(config('app.url'), '/'),
         ]);
-    }
-
-    public function markdown(): RedirectResponse
-    {
-        return redirect()->route('docs');
     }
 
     public function openapi(): BinaryFileResponse
