@@ -96,7 +96,10 @@ class UrlShortenerService
         return $this->linkPreview->fetch($url);
     }
 
-    protected function formatSuccessResponse(ShortLink $shortLink, bool $existing): array
+    /**
+     * @return array<string, mixed>
+     */
+    public function linkDetails(ShortLink $shortLink): array
     {
         return [
             'success' => true,
@@ -104,14 +107,21 @@ class UrlShortenerService
             'short_url' => $this->buildShortUrl($shortLink->short_code),
             'short_code' => $shortLink->short_code,
             'original_url' => $shortLink->original_url,
-            'redirect_mode' => ShortLink::REDIRECT_BRIDGE,
+            'redirect_mode' => $shortLink->redirect_mode ?? ShortLink::REDIRECT_BRIDGE,
+            'bridge_delay_seconds' => (int) ($shortLink->bridge_delay_seconds ?? 0),
             'page_title' => $shortLink->page_title,
             'thumbnail_url' => $shortLink->thumbnail_url,
             'source' => $shortLink->source,
-            'clicks' => $shortLink->clicks,
-            'existing' => $existing,
+            'clicks' => (int) $shortLink->clicks,
+            'user_id' => $shortLink->user_id,
             'created_at' => $shortLink->created_at?->toIso8601String(),
+            'updated_at' => $shortLink->updated_at?->toIso8601String(),
         ];
+    }
+
+    protected function formatSuccessResponse(ShortLink $shortLink, bool $existing): array
+    {
+        return array_merge($this->linkDetails($shortLink), ['existing' => $existing]);
     }
 
     protected function findExistingShortLink(

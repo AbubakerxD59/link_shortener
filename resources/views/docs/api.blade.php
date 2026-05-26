@@ -324,6 +324,7 @@
                     <a href="#overview">Overview</a>
                     <a href="#authentication">Authentication</a>
                     <a href="#create-link-api">Create link (API)</a>
+                    <a href="#get-link-api">Get link details (API)</a>
                     <a href="#create-link-web">Create link (web)</a>
                     <a href="#visit-link">Visit short link</a>
                     <a href="#responses">Responses</a>
@@ -353,6 +354,11 @@
                                 <td><span class="method method-post">POST</span></td>
                                 <td><code>/api/links</code></td>
                                 <td><strong>Recommended</strong> — store a short link (no CSRF)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="method method-get">GET</span></td>
+                                <td><code>/api/links/{code}</code></td>
+                                <td>Get link details and click count</td>
                             </tr>
                             <tr>
                                 <td><span class="method method-post">POST</span></td>
@@ -486,6 +492,78 @@
                 </div>
             </section>
 
+            <section class="doc-section" id="get-link-api">
+                <h2>Get link details (API)</h2>
+                <p>Fetch a short link by its code, including the current <code>clicks</code> count.</p>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="method method-get">GET</span>
+                        <span class="endpoint-path">/api/links/{code}</span>
+                    </div>
+                    <div class="endpoint-body">
+                        <h3>Path parameters</h3>
+                        <div class="doc-table-wrap">
+                            <table class="doc-table">
+                                <thead>
+                                    <tr>
+                                        <th>Parameter</th>
+                                        <th>Type</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><code>code</code></td>
+                                        <td>string</td>
+                                        <td>Short link code (e.g. <code>abc123</code>)</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h3>Example</h3>
+                        @include('docs.partials.code-block', [
+                            'label' => 'cURL',
+                            'code' => 'curl -X GET "' . $appUrl . '/api/links/abc123" \\
+  -H "Accept: application/json"',
+                        ])
+
+                        <h3>Success response</h3>
+                        <p><span class="status-pill status-200">200</span> Link found</p>
+                        @include('docs.partials.code-block', [
+                            'label' => 'JSON',
+                            'code' => '{
+  "success": true,
+  "id": 15,
+  "short_url": "' . $appUrl . '/s/abc123",
+  "short_code": "abc123",
+  "original_url": "https://example.com/blog/post",
+  "redirect_mode": "bridge",
+  "bridge_delay_seconds": 0,
+  "page_title": "Example Blog Post",
+  "thumbnail_url": "https://example.com/og-image.jpg",
+  "source": "api",
+  "clicks": 42,
+  "user_id": null,
+  "created_at": "2026-05-26T14:30:00+00:00",
+  "updated_at": "2026-05-26T16:05:00+00:00"
+}',
+                        ])
+
+                        <h3>Not found</h3>
+                        <p><span class="status-pill status-422">404</span></p>
+                        @include('docs.partials.code-block', [
+                            'label' => 'JSON',
+                            'code' => '{
+  "success": false,
+  "message": "Short link not found."
+}',
+                        ])
+                    </div>
+                </div>
+            </section>
+
             <section class="doc-section" id="create-link-web">
                 <h2>Create short link (web)</h2>
                 <p>Used by the homepage. Same logic as <code>/api/links</code> with fewer parameters.</p>
@@ -559,7 +637,9 @@
                             <tr><td><code>thumbnail_url</code></td><td>Preview image URL (nullable)</td></tr>
                             <tr><td><code>source</code></td><td>Where the link was created (<code>web</code>, <code>api</code>, or custom)</td></tr>
                             <tr><td><code>clicks</code></td><td>Visit count</td></tr>
-                            <tr><td><code>existing</code></td><td><code>true</code> if link already existed</td></tr>
+                            <tr><td><code>user_id</code></td><td>Owner user ID (nullable)</td></tr>
+                            <tr><td><code>updated_at</code></td><td>Last update (ISO 8601)</td></tr>
+                            <tr><td><code>existing</code></td><td><code>true</code> on create when link already existed</td></tr>
                             <tr><td><code>created_at</code></td><td>ISO 8601 timestamp</td></tr>
                         </tbody>
                     </table>

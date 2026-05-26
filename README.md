@@ -20,13 +20,14 @@ php artisan serve
 ## API (integrations)
 
 ```bash
+# Create a link
 POST /api/links
 Content-Type: application/json
 
-{
-  "original_url": "https://example.com/page",
-  "user_id": 1
-}
+{ "original_url": "https://example.com/page", "user_id": 1 }
+
+# Get link details + clicks
+GET /api/links/abc123
 ```
 
 See [docs/API.md](docs/API.md) for full details.

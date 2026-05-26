@@ -58,6 +58,34 @@ paths:
                   - $ref: '#/components/schemas/ValidationError'
                   - $ref: '#/components/schemas/BusinessError'
 
+  /api/links/{code}:
+    get:
+      summary: Get short link details
+      description: Returns link metadata and current click count.
+      operationId: getShortLink
+      tags:
+        - Short links
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-zA-Z0-9]+$'
+      responses:
+        '200':
+          description: Link found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShortLinkDetails'
+        '404':
+          description: Short link not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessError'
+
   /shorten:
     post:
       summary: Create short link (web UI)
@@ -162,7 +190,7 @@ components:
           description: Origin label (defaults to api). Use web, api, engagyo, etc.
           example: api
 
-    ShortLinkSuccess:
+    ShortLinkDetails:
       type: object
       properties:
         success:
@@ -174,7 +202,6 @@ components:
         short_url:
           type: string
           format: uri
-          example: https://short.example.com/s/abc123
         short_code:
           type: string
           example: abc123
@@ -183,8 +210,10 @@ components:
           format: uri
         redirect_mode:
           type: string
-          enum: [bridge]
           example: bridge
+        bridge_delay_seconds:
+          type: integer
+          example: 0
         page_title:
           type: string
           nullable: true
@@ -195,16 +224,28 @@ components:
         source:
           type: string
           nullable: true
-          example: api
         clicks:
           type: integer
-          example: 0
-        existing:
-          type: boolean
+          example: 42
+        user_id:
+          type: integer
+          nullable: true
         created_at:
           type: string
           format: date-time
           nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    ShortLinkSuccess:
+      allOf:
+        - $ref: '#/components/schemas/ShortLinkDetails'
+        - type: object
+          properties:
+            existing:
+              type: boolean
 
     ValidationError:
       type: object

@@ -35,6 +35,7 @@ Source files: `docs/API.md`, `docs/openapi.yaml`, `resources/views/docs/api.blad
 | Method | Path | Purpose |
 |--------|------|---------|
 | `POST` | `/api/links` | **Recommended** — store a short link (full params, no CSRF) |
+| `GET` | `/api/links/{code}` | Get link details including `clicks` |
 | `POST` | `/shorten` | Public shorten endpoint used by the web UI (CSRF required for browser) |
 | `GET` | `/s/{code}` | Open a short link (bridge cloaking page, then destination) |
 
@@ -167,6 +168,63 @@ Invalid destination (normalization failed):
 {
   "success": false,
   "message": "Invalid URL"
+}
+```
+
+---
+
+## Get link details (API)
+
+Fetch a short link by code, including the current click count.
+
+### Request
+
+```
+GET /api/links/{code}
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `code` | Short link code (alphanumeric, e.g. `abc123`) |
+
+#### Example
+
+```bash
+curl -X GET "{APP_URL}/api/links/abc123" \
+  -H "Accept: application/json"
+```
+
+### Success response
+
+**`200 OK`**
+
+```json
+{
+  "success": true,
+  "id": 15,
+  "short_url": "https://short.example.com/s/abc123",
+  "short_code": "abc123",
+  "original_url": "https://example.com/blog/post",
+  "redirect_mode": "bridge",
+  "bridge_delay_seconds": 0,
+  "page_title": "Example Blog Post",
+  "thumbnail_url": "https://example.com/og-image.jpg",
+  "source": "api",
+  "clicks": 42,
+  "user_id": null,
+  "created_at": "2026-05-26T14:30:00+00:00",
+  "updated_at": "2026-05-26T16:05:00+00:00"
+}
+```
+
+### Not found
+
+**`404 Not Found`**
+
+```json
+{
+  "success": false,
+  "message": "Short link not found."
 }
 ```
 
@@ -331,6 +389,7 @@ Laravel health endpoint (not part of the shortener API).
 GET    /api-docs             API documentation (web UI)
 GET    /api-docs/openapi.yaml  OpenAPI specification
 POST   /api/links           Create / resolve short link (integrations)
+GET    /api/links/{code}    Get link details and clicks
 POST   /shorten             Create short link (web UI, CSRF)
 GET    /s/{code}            Bridge page → user clicks Continue
 GET    /up                  Application health

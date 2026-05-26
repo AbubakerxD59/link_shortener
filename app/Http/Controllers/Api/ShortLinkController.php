@@ -48,4 +48,21 @@ class ShortLinkController extends Controller
 
         return response()->json($result, $result['existing'] ? 200 : 201);
     }
+
+    /**
+     * Get short link details including click count.
+     */
+    public function show(string $code): JsonResponse
+    {
+        $shortLink = ShortLink::where('short_code', $code)->first();
+
+        if (! $shortLink) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Short link not found.',
+            ], 404);
+        }
+
+        return response()->json($this->urlShortener->linkDetails($shortLink));
+    }
 }
