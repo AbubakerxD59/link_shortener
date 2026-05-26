@@ -169,6 +169,46 @@
         border-radius: calc(var(--radius) - 2px);
     }
 
+    .result-preview {
+        display: none;
+        margin-top: 1rem;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+        background: var(--card);
+        text-align: left;
+    }
+
+    .result-preview.visible {
+        display: flex;
+        gap: 0.875rem;
+        align-items: center;
+        padding: 0.75rem;
+    }
+
+    .result-preview img {
+        width: 72px;
+        height: 72px;
+        object-fit: cover;
+        border-radius: 10px;
+        flex-shrink: 0;
+        background: var(--surface);
+    }
+
+    .result-preview-title {
+        margin: 0 0 0.25rem;
+        font-family: var(--font-display);
+        font-size: 0.9375rem;
+        font-weight: 600;
+        line-height: 1.35;
+    }
+
+    .result-preview-label {
+        margin: 0;
+        font-size: 0.75rem;
+        color: var(--muted);
+    }
+
     .result-box {
         margin-top: 0.5rem;
         padding: 1.25rem 1.25rem 1rem;
@@ -391,7 +431,7 @@
         <div class="container">
             <div class="hero-badge">
                 <span class="hero-badge-dot" aria-hidden="true"></span>
-                Free · No sign-up · Instant redirects
+                Free · No sign-up · Link cloaking included
             </div>
 
             <h1>
@@ -400,7 +440,7 @@
             </h1>
 
             <p class="hero-lead">
-                Turn long URLs into clean, shareable short links. Track clicks and redirect visitors instantly — powered by {{ config('app.name', 'ShrtLnk') }}.
+                Turn long URLs into clean, shareable short links with built-in cloaking. Every link shows a preview bridge page before visitors reach the destination.
             </p>
 
             <div class="shortener-card">
@@ -435,7 +475,14 @@
                             <input type="text" id="short-url-output" class="result-output" readonly>
                             <button type="button" class="btn btn-outline" id="copy-short-url">Copy link</button>
                         </div>
-                        <p class="hint">Opens your original URL with a fast redirect.</p>
+                        <div class="result-preview" id="result-preview" aria-hidden="true">
+                            <img id="result-preview-img" src="" alt="" width="72" height="72" hidden>
+                            <div>
+                                <p class="result-preview-label">Destination preview</p>
+                                <p class="result-preview-title" id="result-preview-title"></p>
+                            </div>
+                        </div>
+                        <p class="hint" id="result-hint">Visitors see a bridge page with preview before the destination.</p>
                     </div>
 
                     <p id="shorten-error" class="error-msg" role="alert"></p>
@@ -448,7 +495,7 @@
         <div class="container">
             <p class="section-label" style="display:flex;justify-content:center;">Features</p>
             <h2 class="section-title">Everything you need</h2>
-            <p class="section-subtitle">Short links, click tracking, and instant redirects — built for speed and simplicity.</p>
+            <p class="section-subtitle">Short links, click tracking, and bridge-page cloaking on every link.</p>
             <div class="feature-grid">
                 <div class="feature-card">
                     <div class="feature-icon">🔗</div>
@@ -456,9 +503,9 @@
                     <p>Compact URLs you can drop anywhere — e.g. {{ parse_url(config('app.url'), PHP_URL_HOST) }}/s/abc123</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
-                    <h3>Instant redirect</h3>
-                    <p>Visitors reach your destination immediately with a lightweight 302 redirect.</p>
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Link cloaking</h3>
+                    <p>Every link uses a bridge page with title and thumbnail preview. The destination stays hidden until visitors continue or auto-redirect after 5 seconds.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📊</div>
@@ -508,6 +555,10 @@
     var output = document.getElementById('short-url-output');
     var errorEl = document.getElementById('shorten-error');
     var copyBtn = document.getElementById('copy-short-url');
+    var resultHint = document.getElementById('result-hint');
+    var resultPreview = document.getElementById('result-preview');
+    var resultPreviewImg = document.getElementById('result-preview-img');
+    var resultPreviewTitle = document.getElementById('result-preview-title');
 
     function isValidUrl(s) {
         try {
@@ -524,11 +575,29 @@
         resultBox.classList.remove('visible');
     }
 
-    function showResult(shortUrl, isExisting) {
+    function showResult(shortUrl, isExisting, pageTitle, thumbnailUrl) {
         output.value = shortUrl;
         resultLabelText.textContent = isExisting
             ? 'You already shortened this URL'
             : 'Your short link is ready';
+        if (resultHint) {
+            resultHint.textContent = 'Visitors see a bridge page with title and thumbnail before the destination.';
+        }
+        if (resultPreview && resultPreviewTitle) {
+            var showPreview = !!pageTitle;
+            resultPreview.classList.toggle('visible', showPreview);
+            resultPreview.setAttribute('aria-hidden', showPreview ? 'false' : 'true');
+            resultPreviewTitle.textContent = pageTitle || '';
+            if (resultPreviewImg) {
+                if (thumbnailUrl) {
+                    resultPreviewImg.src = thumbnailUrl;
+                    resultPreviewImg.hidden = false;
+                } else {
+                    resultPreviewImg.removeAttribute('src');
+                    resultPreviewImg.hidden = true;
+                }
+            }
+        }
         errorEl.classList.remove('visible');
         resultBox.classList.remove('visible');
         void resultBox.offsetWidth;
@@ -587,7 +656,12 @@
         .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
         .then(function(r) {
             if (r.data.success && r.data.short_url) {
-                showResult(r.data.short_url, r.data.existing === true);
+                showResult(
+                    r.data.short_url,
+                    r.data.existing === true,
+                    r.data.page_title || '',
+                    r.data.thumbnail_url || ''
+                );
                 showToast(r.data.existing ? 'Existing short link returned.' : 'Link shortened!', 'success');
             } else {
                 showError(r.data.message || 'Could not shorten link.');

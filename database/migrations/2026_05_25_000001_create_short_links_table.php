@@ -17,6 +17,10 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id')->nullable()->index();
             $table->string('short_code', 20)->unique();
             $table->text('original_url');
+            $table->string('redirect_mode', 20)->default('bridge');
+            $table->unsignedTinyInteger('bridge_delay_seconds')->default(5);
+            $table->string('page_title', 500)->nullable();
+            $table->text('thumbnail_url')->nullable();
             $table->text('user_agent')->nullable();
             $table->string('ip_address', 45)->nullable();
             $table->unsignedBigInteger('clicks')->default(0);

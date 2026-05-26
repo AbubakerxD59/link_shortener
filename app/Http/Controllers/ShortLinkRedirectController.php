@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\ShortLink;
-use Illuminate\Http\RedirectResponse;
+use App\Services\LinkPreviewService;
+use Illuminate\Contracts\View\View;
 
 class ShortLinkRedirectController extends Controller
 {
-    public function __invoke(string $code): RedirectResponse
+    public function __construct(protected LinkPreviewService $linkPreview) {}
+
+    public function __invoke(string $code): View
     {
         $shortLink = ShortLink::where('short_code', $code)->first();
 
@@ -17,6 +20,18 @@ class ShortLinkRedirectController extends Controller
 
         $shortLink->increment('clicks');
 
-        return redirect()->away($shortLink->original_url, 302);
+        $destinationUrl = $shortLink->original_url;
+        $destinationHost = parse_url($destinationUrl, PHP_URL_HOST) ?? $destinationUrl;
+        $delaySeconds = 5;
+
+        $shortLink->ensureLinkPreview($this->linkPreview);
+
+        return view('redirect.bridge', [
+            'destinationUrl' => $destinationUrl,
+            'destinationHost' => $destinationHost,
+            'delaySeconds' => $delaySeconds,
+            'pageTitle' => $shortLink->displayTitle($destinationHost),
+            'thumbnailUrl' => $shortLink->thumbnail_url,
+        ]);
     }
 }

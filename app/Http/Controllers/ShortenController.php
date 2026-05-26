@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ShortLink;
 use App\Services\UrlShortenerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,7 +23,7 @@ class ShortenController extends Controller
             $request->original_url,
             null,
             $userAgent,
-            $request->ip()
+            $request->ip(),
         );
 
         if (! $result['success']) {
