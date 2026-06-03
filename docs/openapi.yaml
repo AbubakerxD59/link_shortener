@@ -59,6 +59,77 @@ paths:
                   - $ref: '#/components/schemas/BusinessError'
 
   /api/links/{code}:
+    patch:
+      summary: Update short link
+      description: Partial update. short_code in the path cannot be changed.
+      operationId: updateShortLink
+      tags:
+        - Short links
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-zA-Z0-9]+$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateShortLinkRequest'
+      responses:
+        '200':
+          description: Updated link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShortLinkDetails'
+        '404':
+          description: Short link not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessError'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ValidationError'
+                  - $ref: '#/components/schemas/BusinessError'
+    put:
+      summary: Update short link (full/partial)
+      operationId: updateShortLinkPut
+      tags:
+        - Short links
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-zA-Z0-9]+$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateShortLinkRequest'
+      responses:
+        '200':
+          description: Updated link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShortLinkDetails'
+        '404':
+          description: Short link not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessError'
     get:
       summary: Get short link details
       description: Returns link metadata and current click count.
@@ -194,6 +265,34 @@ components:
           enum: [0, 1]
           default: 1
           description: 1 = bridge page, 0 = direct redirect
+
+    UpdateShortLinkRequest:
+      type: object
+      minProperties: 1
+      properties:
+        original_url:
+          type: string
+          format: uri
+          maxLength: 2048
+        url_cloak:
+          type: integer
+          enum: [0, 1]
+        page_title:
+          type: string
+          maxLength: 500
+          nullable: true
+        thumbnail_url:
+          type: string
+          format: uri
+          maxLength: 2048
+          nullable: true
+        source:
+          type: string
+          maxLength: 64
+        user_id:
+          type: integer
+          minimum: 1
+          nullable: true
 
     ShortLinkDetails:
       type: object

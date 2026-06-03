@@ -71,4 +71,71 @@ class ShortLinkController extends Controller
 
         return response()->json($this->urlShortener->linkDetails($shortLink));
     }
+
+    /**
+     * Update a short link (partial).
+     *
+     * Params: original_url, url_cloak (0|1), page_title, thumbnail_url, source, user_id (all optional)
+     */
+    public function update(Request $request, string $code): JsonResponse
+    {
+        $shortLink = ShortLink::where('short_code', $code)->first();
+
+        if (! $shortLink) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Short link not found.',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'original_url' => 'sometimes|url|max:2048',
+            'url_cloak' => 'sometimes|integer|in:0,1',
+            'user_id' => 'nullable|integer|min:1',
+            'page_title' => 'nullable|string|max:500',
+            'thumbnail_url' => 'nullable|url|max:2048',
+            'source' => 'nullable|string|max:64',
+            'cloak' => 'sometimes|boolean',
+        ]);
+
+        $payload = $this->buildUpdatePayload($request, $validated);
+
+        if ($payload === []) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No fields to update.',
+            ], 422);
+        }
+
+        $result = $this->urlShortener->updateShortLink($shortLink, $payload);
+
+        if (! $result['success']) {
+            return response()->json($result, 422);
+        }
+
+        return response()->json($result);
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    protected function buildUpdatePayload(Request $request, array $validated): array
+    {
+        $payload = [];
+
+        foreach (['original_url', 'page_title', 'thumbnail_url', 'source', 'user_id'] as $field) {
+            if (array_key_exists($field, $validated)) {
+                $payload[$field] = $validated[$field];
+            }
+        }
+
+        if (array_key_exists('url_cloak', $validated)) {
+            $payload['url_cloak'] = $validated['url_cloak'];
+        } elseif ($request->has('cloak')) {
+            $payload['url_cloak'] = $request->boolean('cloak') ? 1 : 0;
+        }
+
+        return $payload;
+    }
 }

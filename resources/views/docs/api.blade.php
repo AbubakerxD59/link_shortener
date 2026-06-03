@@ -325,6 +325,7 @@
                     <a href="#authentication">Authentication</a>
                     <a href="#create-link-api">Create link (API)</a>
                     <a href="#get-link-api">Get link details (API)</a>
+                    <a href="#update-link-api">Update link (API)</a>
                     <a href="#create-link-web">Create link (web)</a>
                     <a href="#visit-link">Visit short link</a>
                     <a href="#responses">Responses</a>
@@ -359,6 +360,11 @@
                                 <td><span class="method method-get">GET</span></td>
                                 <td><code>/api/links/{code}</code></td>
                                 <td>Get link details and click count</td>
+                            </tr>
+                            <tr>
+                                <td><span class="method method-post">PATCH</span></td>
+                                <td><code>/api/links/{code}</code></td>
+                                <td>Update an existing short link</td>
                             </tr>
                             <tr>
                                 <td><span class="method method-post">POST</span></td>
@@ -570,6 +576,81 @@
   "message": "Short link not found."
 }',
                         ])
+                    </div>
+                </div>
+            </section>
+
+            <section class="doc-section" id="update-link-api">
+                <h2>Update short link (API)</h2>
+                <p>Partially update an existing link by <code>short_code</code>. Send only the fields you want to change.</p>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="method method-post">PATCH</span>
+                        <span class="endpoint-path">/api/links/{code}</span>
+                    </div>
+                    <div class="endpoint-body">
+                        <p>Also accepts <code>PUT</code> with the same body.</p>
+                        <h3>Body parameters (all optional)</h3>
+                        <div class="doc-table-wrap">
+                            <table class="doc-table">
+                                <thead>
+                                    <tr>
+                                        <th>Parameter</th>
+                                        <th>Type</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><code>original_url</code></td>
+                                        <td>string (URL)</td>
+                                        <td>New destination URL</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>url_cloak</code></td>
+                                        <td>integer</td>
+                                        <td><code>1</code> = bridge, <code>0</code> = direct</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>page_title</code></td>
+                                        <td>string</td>
+                                        <td>Bridge preview title</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>thumbnail_url</code></td>
+                                        <td>string (URL)</td>
+                                        <td>Bridge preview image</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>source</code></td>
+                                        <td>string</td>
+                                        <td>Origin label</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>user_id</code></td>
+                                        <td>integer</td>
+                                        <td>Owner user ID</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h3>Example</h3>
+                        @include('docs.partials.code-block', [
+                            'label' => 'cURL',
+                            'code' => 'curl -X PATCH "' . $appUrl . '/api/links/abc123" \\
+  -H "Accept: application/json" \\
+  -H "Content-Type: application/json" \\
+  -d \'{
+    "original_url": "https://example.com/updated",
+    "url_cloak": 1,
+    "page_title": "Updated title"
+  }\'',
+                        ])
+
+                        <h3>Success response</h3>
+                        <p><span class="status-pill status-200">200</span> Returns the updated link (same shape as GET).</p>
                     </div>
                 </div>
             </section>

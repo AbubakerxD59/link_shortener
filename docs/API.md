@@ -36,6 +36,7 @@ Source files: `docs/API.md`, `docs/openapi.yaml`, `resources/views/docs/api.blad
 |--------|------|---------|
 | `POST` | `/api/links` | **Recommended** — store a short link (full params, no CSRF) |
 | `GET` | `/api/links/{code}` | Get link details including `clicks` |
+| `PATCH` / `PUT` | `/api/links/{code}` | Update an existing short link |
 | `POST` | `/shorten` | Public shorten endpoint used by the web UI (CSRF required for browser) |
 | `GET` | `/s/{code}` | Open a short link (bridge cloaking page, then destination) |
 
@@ -236,6 +237,52 @@ curl -X GET "{APP_URL}/api/links/abc123" \
 
 ---
 
+## Update short link (API)
+
+Update fields on an existing link. The `short_code` in the path does not change.
+
+### Request
+
+```
+PATCH /api/links/{code}
+```
+
+Also accepts `PUT`.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `original_url` | string (URL) | New destination |
+| `url_cloak` | integer | `1` = bridge, `0` = direct |
+| `page_title` | string | Bridge preview title |
+| `thumbnail_url` | string (URL) | Bridge preview image |
+| `source` | string | Origin label |
+| `user_id` | integer | Owner user ID |
+
+At least one field is required.
+
+#### Example
+
+```bash
+curl -X PATCH "{APP_URL}/api/links/abc123" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "original_url": "https://example.com/updated",
+    "url_cloak": 0
+  }'
+```
+
+### Success response
+
+**`200 OK`** — same JSON shape as GET.
+
+### Errors
+
+**`404`** — unknown `short_code`  
+**`422`** — validation failed, no fields sent, invalid URL, or duplicate URL conflict
+
+---
+
 ## Create short link (web)
 
 Used by the homepage form. Same core logic as `/api/links` but fewer parameters and **CSRF protection** when called from the browser.
@@ -397,6 +444,8 @@ GET    /api-docs             API documentation (web UI)
 GET    /api-docs/openapi.yaml  OpenAPI specification
 POST   /api/links           Create / resolve short link (integrations)
 GET    /api/links/{code}    Get link details and clicks
+PATCH  /api/links/{code}    Update short link
+PUT    /api/links/{code}    Update short link (same as PATCH)
 POST   /shorten             Create short link (web UI, CSRF)
 GET    /s/{code}            Bridge page → user clicks Continue
 GET    /up                  Application health

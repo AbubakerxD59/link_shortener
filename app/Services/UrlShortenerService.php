@@ -153,6 +153,118 @@ class UrlShortenerService
         return $query->whereNull('user_id')->whereNull('user_agent')->first();
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public function updateShortLink(ShortLink $shortLink, array $data): array
+    {
+        $updates = [];
+        $refetchPreview = false;
+        $clearPreview = false;
+        $explicitPreview = array_key_exists('page_title', $data) || array_key_exists('thumbnail_url', $data);
+
+        $nextRedirectMode = $shortLink->redirect_mode ?? ShortLink::REDIRECT_BRIDGE;
+        $nextSource = $shortLink->source ?? ShortLink::SOURCE_API;
+        $nextUserId = $shortLink->user_id;
+
+        if (array_key_exists('url_cloak', $data)) {
+            $nextRedirectMode = ShortLink::redirectModeFromCloak(ShortLink::cloakedFromUrlCloak($data['url_cloak']));
+            $updates['redirect_mode'] = $nextRedirectMode;
+            $refetchPreview = $nextRedirectMode === ShortLink::REDIRECT_BRIDGE;
+            $clearPreview = $nextRedirectMode === ShortLink::REDIRECT_DIRECT;
+        }
+
+        if (array_key_exists('original_url', $data)) {
+            $normalizedUrl = ShortLink::normalizeUrl($data['original_url']);
+            if ($normalizedUrl === '') {
+                return ['success' => false, 'message' => 'Invalid URL'];
+            }
+
+            if ($this->urlConflictsWithAnotherLink($shortLink, $normalizedUrl, $nextRedirectMode, $nextSource, $nextUserId)) {
+                return ['success' => false, 'message' => 'Another short link already uses this URL.'];
+            }
+
+            $updates['original_url'] = $normalizedUrl;
+            if ($nextRedirectMode === ShortLink::REDIRECT_BRIDGE) {
+                $refetchPreview = true;
+            }
+        }
+
+        if (array_key_exists('page_title', $data)) {
+            $updates['page_title'] = $data['page_title'];
+        }
+
+        if (array_key_exists('thumbnail_url', $data)) {
+            $updates['thumbnail_url'] = $data['thumbnail_url'];
+        }
+
+        if (array_key_exists('source', $data)) {
+            $nextSource = ShortLink::normalizeSource($data['source'], $shortLink->source ?? ShortLink::SOURCE_API);
+            $updates['source'] = $nextSource;
+        }
+
+        if (array_key_exists('user_id', $data)) {
+            $nextUserId = $data['user_id'];
+            $updates['user_id'] = $nextUserId;
+        }
+
+        if ($updates === []) {
+            return ['success' => false, 'message' => 'No valid fields to update.'];
+        }
+
+        $shortLink->update($updates);
+        $shortLink->refresh();
+
+        if ($clearPreview && ! $shortLink->isCloaked()) {
+            $shortLink->update(['page_title' => null, 'thumbnail_url' => null]);
+            $shortLink->refresh();
+        } elseif ($refetchPreview && $shortLink->isCloaked() && ! $explicitPreview) {
+            $preview = $this->linkPreview->fetch($shortLink->original_url);
+            $shortLink->update([
+                'page_title' => $preview['page_title'],
+                'thumbnail_url' => $preview['thumbnail_url'],
+            ]);
+            $shortLink->refresh();
+        }
+
+        return $this->linkDetails($shortLink);
+    }
+
+    protected function urlConflictsWithAnotherLink(
+        ShortLink $shortLink,
+        string $normalizedUrl,
+        ?string $redirectMode = null,
+        ?string $source = null,
+        ?int $userId = null,
+    ): bool {
+        $redirectMode = $redirectMode ?? $shortLink->redirect_mode ?? ShortLink::REDIRECT_BRIDGE;
+        $source = $source ?? $shortLink->source ?? ShortLink::SOURCE_API;
+        $userId = $userId ?? $shortLink->user_id;
+
+        return ShortLink::query()
+            ->where('original_url', $normalizedUrl)
+            ->where('id', '!=', $shortLink->id)
+            ->where(function ($q) use ($redirectMode) {
+                $q->where('redirect_mode', $redirectMode);
+                if ($redirectMode === ShortLink::REDIRECT_DIRECT) {
+                    $q->orWhereNull('redirect_mode');
+                }
+            })
+            ->where(function ($q) use ($source) {
+                $q->where('source', $source);
+                if ($source === ShortLink::SOURCE_WEB) {
+                    $q->orWhereNull('source');
+                }
+            })
+            ->when(
+                $userId !== null,
+                fn ($q) => $q->where('user_id', $userId),
+                fn ($q) => $q->whereNull('user_id')
+            )
+            ->exists();
+    }
+
     public function buildShortUrl(string $shortCode): string
     {
         return rtrim(config('app.url'), '/').'/s/'.$shortCode;
