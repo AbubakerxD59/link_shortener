@@ -15,6 +15,7 @@ class ShortenController extends Controller
     {
         $request->validate([
             'original_url' => 'required|url|max:2048',
+            'cloak' => 'sometimes|boolean',
         ]);
 
         $userAgent = $request->input('user_agent') ?: $request->userAgent();
@@ -27,6 +28,7 @@ class ShortenController extends Controller
             null,
             null,
             ShortLink::SOURCE_WEB,
+            $request->boolean('cloak', true),
         );
 
         if (! $result['success']) {

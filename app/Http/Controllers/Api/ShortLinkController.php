@@ -15,7 +15,7 @@ class ShortLinkController extends Controller
     /**
      * Store a short link (JSON body or form params).
      *
-     * Params: original_url (required), user_id, user_agent, ip_address, page_title, thumbnail_url, source (optional)
+     * Params: original_url (required), cloak, user_id, user_agent, ip_address, page_title, thumbnail_url, source (optional)
      */
     public function store(Request $request): JsonResponse
     {
@@ -27,6 +27,7 @@ class ShortLinkController extends Controller
             'page_title' => 'nullable|string|max:500',
             'thumbnail_url' => 'nullable|url|max:2048',
             'source' => 'nullable|string|max:64',
+            'cloak' => 'sometimes|boolean',
         ]);
 
         $userAgent = $validated['user_agent'] ?? $request->userAgent();
@@ -40,6 +41,7 @@ class ShortLinkController extends Controller
             $validated['page_title'] ?? null,
             $validated['thumbnail_url'] ?? null,
             $validated['source'] ?? ShortLink::SOURCE_API,
+            $request->boolean('cloak', true),
         );
 
         if (! $result['success']) {

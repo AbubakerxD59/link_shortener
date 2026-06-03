@@ -10,7 +10,6 @@ class UrlShortenerService
 
     /**
      * Public shorten (matches Engagyo GeneralController::shortenPublic).
-     * All links use bridge-page cloaking by default.
      */
     public function shortenPublic(
         string $originalUrl,
@@ -20,8 +19,10 @@ class UrlShortenerService
         ?string $pageTitle = null,
         ?string $thumbnailUrl = null,
         ?string $source = null,
+        bool $cloaked = true,
     ): array {
         $source = ShortLink::normalizeSource($source, ShortLink::SOURCE_WEB);
+        $redirectMode = ShortLink::redirectModeFromCloak($cloaked);
         $normalizedUrl = ShortLink::normalizeUrl($originalUrl);
         if ($normalizedUrl === '') {
             return ['success' => false, 'message' => 'Invalid URL'];
@@ -35,17 +36,16 @@ class UrlShortenerService
                 'short_url' => $normalizedUrl,
                 'short_code' => '',
                 'original_url' => $normalizedUrl,
-                'redirect_mode' => ShortLink::REDIRECT_BRIDGE,
+                'redirect_mode' => $redirectMode,
+                'cloaked' => $cloaked,
                 'existing' => true,
             ];
         }
 
-        $existing = $this->findExistingShortLink($normalizedUrl, $userId, $userAgent, $source);
+        $existing = $this->findExistingShortLink($normalizedUrl, $userId, $userAgent, $source, $redirectMode);
 
         if ($existing) {
-            $this->ensureBridgeMode($existing);
-
-            if (! $existing->page_title || ! $existing->thumbnail_url) {
+            if ($cloaked && (! $existing->page_title || ! $existing->thumbnail_url)) {
                 $existing->ensureLinkPreview($this->linkPreview);
             }
 
@@ -53,13 +53,15 @@ class UrlShortenerService
         }
 
         $shortCode = ShortLink::generateUniqueCode(6);
-        $preview = $this->resolvePreview($normalizedUrl, $pageTitle, $thumbnailUrl);
+        $preview = $cloaked
+            ? $this->resolvePreview($normalizedUrl, $pageTitle, $thumbnailUrl)
+            : ['page_title' => null, 'thumbnail_url' => null];
 
         $shortLink = ShortLink::create([
             'user_id' => $userId,
             'short_code' => $shortCode,
             'original_url' => $normalizedUrl,
-            'redirect_mode' => ShortLink::REDIRECT_BRIDGE,
+            'redirect_mode' => $redirectMode,
             'bridge_delay_seconds' => 0,
             'page_title' => $preview['page_title'],
             'thumbnail_url' => $preview['thumbnail_url'],
@@ -69,14 +71,6 @@ class UrlShortenerService
         ]);
 
         return $this->formatSuccessResponse($shortLink, false);
-    }
-
-    protected function ensureBridgeMode(ShortLink $shortLink): void
-    {
-        if ($shortLink->redirect_mode !== ShortLink::REDIRECT_BRIDGE) {
-            $shortLink->update(['redirect_mode' => ShortLink::REDIRECT_BRIDGE]);
-            $shortLink->refresh();
-        }
     }
 
     /**
@@ -108,6 +102,7 @@ class UrlShortenerService
             'short_code' => $shortLink->short_code,
             'original_url' => $shortLink->original_url,
             'redirect_mode' => $shortLink->redirect_mode ?? ShortLink::REDIRECT_BRIDGE,
+            'cloaked' => $shortLink->isCloaked(),
             'bridge_delay_seconds' => (int) ($shortLink->bridge_delay_seconds ?? 0),
             'page_title' => $shortLink->page_title,
             'thumbnail_url' => $shortLink->thumbnail_url,
@@ -129,9 +124,16 @@ class UrlShortenerService
         ?int $userId,
         ?string $userAgent,
         string $source,
+        string $redirectMode,
     ): ?ShortLink {
         $query = ShortLink::query()
             ->where('original_url', $normalizedUrl)
+            ->where(function ($q) use ($redirectMode) {
+                $q->where('redirect_mode', $redirectMode);
+                if ($redirectMode === ShortLink::REDIRECT_DIRECT) {
+                    $q->orWhereNull('redirect_mode');
+                }
+            })
             ->where(function ($q) use ($source) {
                 $q->where('source', $source);
                 if ($source === ShortLink::SOURCE_WEB) {

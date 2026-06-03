@@ -45,7 +45,12 @@ class ShortLink extends Model
 
     public function isCloaked(): bool
     {
-        return in_array($this->redirect_mode, [self::REDIRECT_BRIDGE, self::REDIRECT_META], true);
+        return ($this->redirect_mode ?? self::REDIRECT_BRIDGE) === self::REDIRECT_BRIDGE;
+    }
+
+    public static function redirectModeFromCloak(bool $cloaked): string
+    {
+        return $cloaked ? self::REDIRECT_BRIDGE : self::REDIRECT_DIRECT;
     }
 
     public function displayTitle(?string $destinationHost = null): string

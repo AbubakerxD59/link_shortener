@@ -37,6 +37,7 @@ class ShortLinkStoreTest extends TestCase
             'redirect_mode' => 'bridge',
             'source' => 'api',
         ]);
+        $response->assertJsonPath('cloaked', true);
     }
 
     public function test_api_accepts_optional_preview_fields(): void
@@ -92,6 +93,8 @@ class ShortLinkStoreTest extends TestCase
             'user_id' => 1,
             'source' => 'api',
         ]);
+
+        // default cloak=true matches bridge link above
 
         $response = $this->postJson('/api/links', [
             'original_url' => 'https://example.com/dup',

@@ -189,6 +189,10 @@ components:
           nullable: true
           description: Origin label (defaults to api). Use web, api, engagyo, etc.
           example: api
+        cloak:
+          type: boolean
+          default: true
+          description: true = bridge page, false = direct redirect
 
     ShortLinkDetails:
       type: object
@@ -211,6 +215,9 @@ components:
         redirect_mode:
           type: string
           example: bridge
+        cloaked:
+          type: boolean
+          example: true
         bridge_delay_seconds:
           type: integer
           example: 0

@@ -375,7 +375,7 @@
                 </div>
 
                 <div class="callout">
-                    <strong>Link cloaking:</strong> Every link uses a bridge page with title and thumbnail preview. Visitors must click <strong>Continue</strong> — there is no auto-redirect.
+                    <strong>Link cloaking:</strong> Set <code>cloak: true</code> (default) for a bridge page with preview; set <code>cloak: false</code> for an instant 302 redirect to the destination.
                 </div>
             </section>
 
@@ -447,6 +447,12 @@
                                         <td>string</td>
                                         <td>No</td>
                                         <td>Origin label (e.g. <code>api</code>, <code>engagyo</code>). Defaults to <code>api</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>cloak</code></td>
+                                        <td>boolean</td>
+                                        <td>No</td>
+                                        <td><code>true</code> = bridge page (default). <code>false</code> = direct 302 redirect</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -632,7 +638,8 @@
                             <tr><td><code>short_url</code></td><td>Full shareable URL</td></tr>
                             <tr><td><code>short_code</code></td><td>Code used in <code>/s/{code}</code></td></tr>
                             <tr><td><code>original_url</code></td><td>Normalized destination</td></tr>
-                            <tr><td><code>redirect_mode</code></td><td>Always <code>bridge</code></td></tr>
+                            <tr><td><code>redirect_mode</code></td><td><code>bridge</code> or <code>direct</code></td></tr>
+                            <tr><td><code>cloaked</code></td><td><code>true</code> when bridge page is used</td></tr>
                             <tr><td><code>page_title</code></td><td>Bridge preview title</td></tr>
                             <tr><td><code>thumbnail_url</code></td><td>Preview image URL (nullable)</td></tr>
                             <tr><td><code>source</code></td><td>Where the link was created (<code>web</code>, <code>api</code>, or custom)</td></tr>
@@ -677,7 +684,7 @@
                 <h3>Link preview</h3>
                 <p>On create, the server may fetch Open Graph tags from the destination. Failures fall back to hostname as title with no thumbnail.</p>
                 <h3>Deduplication</h3>
-                <p>Same <code>original_url</code> and <code>source</code> returns an existing link when scoped by <code>user_id</code>, <code>user_agent</code>, or the anonymous bucket.</p>
+                <p>Same <code>original_url</code>, <code>source</code>, and <code>cloak</code> setting returns an existing link when scoped by <code>user_id</code>, <code>user_agent</code>, or the anonymous bucket.</p>
             </section>
         </div>
     </div>

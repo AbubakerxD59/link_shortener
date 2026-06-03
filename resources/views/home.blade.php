@@ -169,6 +169,44 @@
         border-radius: calc(var(--radius) - 2px);
     }
 
+    .cloak-options {
+        margin-top: 0.875rem;
+        padding: 0.875rem 1rem;
+        background: var(--surface);
+        border-radius: calc(var(--radius-lg) - 6px);
+        text-align: left;
+    }
+
+    .cloak-toggle {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .cloak-toggle input {
+        width: 1.125rem;
+        height: 1.125rem;
+        margin: 0.125rem 0 0;
+        accent-color: var(--accent);
+        flex-shrink: 0;
+    }
+
+    .cloak-toggle-text strong {
+        display: block;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 0.125rem;
+    }
+
+    .cloak-toggle-text span {
+        font-size: 0.8125rem;
+        color: var(--muted);
+        line-height: 1.5;
+    }
+
     .result-preview {
         display: none;
         margin-top: 1rem;
@@ -431,7 +469,7 @@
         <div class="container">
             <div class="hero-badge">
                 <span class="hero-badge-dot" aria-hidden="true"></span>
-                Free · No sign-up · Link cloaking included
+                Free · No sign-up · Optional link cloaking
             </div>
 
             <h1>
@@ -440,7 +478,7 @@
             </h1>
 
             <p class="hero-lead">
-                Turn long URLs into clean, shareable short links with built-in cloaking. Every link shows a preview bridge page before visitors reach the destination.
+                Turn long URLs into clean, shareable short links. Enable cloaking to show a preview bridge page, or turn it off for instant redirects.
             </p>
 
             <div class="shortener-card">
@@ -464,6 +502,16 @@
                         </button>
                     </div>
 
+                    <div class="cloak-options">
+                        <label class="cloak-toggle" for="cloak-enabled">
+                            <input type="checkbox" id="cloak-enabled" name="cloak" checked>
+                            <span class="cloak-toggle-text">
+                                <strong>Enable link cloaking</strong>
+                                <span>When on, visitors see a preview page before continuing. When off, they go straight to the destination.</span>
+                            </span>
+                        </label>
+                    </div>
+
                     <div id="shorten-result" class="result-box">
                         <p class="result-label" id="result-label">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
@@ -482,7 +530,7 @@
                                 <p class="result-preview-title" id="result-preview-title"></p>
                             </div>
                         </div>
-                        <p class="hint" id="result-hint">Visitors see a bridge page with preview before the destination.</p>
+                        <p class="hint" id="result-hint">Cloaking on — visitors see a bridge page before the destination.</p>
                     </div>
 
                     <p id="shorten-error" class="error-msg" role="alert"></p>
@@ -495,7 +543,7 @@
         <div class="container">
             <p class="section-label" style="display:flex;justify-content:center;">Features</p>
             <h2 class="section-title">Everything you need</h2>
-            <p class="section-subtitle">Short links, click tracking, and bridge-page cloaking on every link.</p>
+            <p class="section-subtitle">Short links, click tracking, and optional bridge-page cloaking.</p>
             <div class="feature-grid">
                 <div class="feature-card">
                     <div class="feature-icon">🔗</div>
@@ -505,7 +553,7 @@
                 <div class="feature-card">
                     <div class="feature-icon">🛡️</div>
                     <h3>Link cloaking</h3>
-                    <p>Every link uses a bridge page with title and thumbnail preview. The destination stays hidden until visitors click Continue.</p>
+                    <p>Toggle cloaking on to show title and thumbnail on a bridge page. Toggle off for a fast direct redirect.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📊</div>
@@ -559,6 +607,7 @@
     var resultPreview = document.getElementById('result-preview');
     var resultPreviewImg = document.getElementById('result-preview-img');
     var resultPreviewTitle = document.getElementById('result-preview-title');
+    var cloakEnabled = document.getElementById('cloak-enabled');
 
     function isValidUrl(s) {
         try {
@@ -575,16 +624,18 @@
         resultBox.classList.remove('visible');
     }
 
-    function showResult(shortUrl, isExisting, pageTitle, thumbnailUrl) {
+    function showResult(shortUrl, isExisting, pageTitle, thumbnailUrl, cloaked) {
         output.value = shortUrl;
         resultLabelText.textContent = isExisting
             ? 'You already shortened this URL'
             : 'Your short link is ready';
         if (resultHint) {
-            resultHint.textContent = 'Visitors see a bridge page with title and thumbnail before the destination.';
+            resultHint.textContent = cloaked
+                ? 'Cloaking on — visitors see a bridge page before the destination.'
+                : 'Cloaking off — visitors are redirected directly to your URL.';
         }
         if (resultPreview && resultPreviewTitle) {
-            var showPreview = !!pageTitle;
+            var showPreview = cloaked && !!pageTitle;
             resultPreview.classList.toggle('visible', showPreview);
             resultPreview.setAttribute('aria-hidden', showPreview ? 'false' : 'true');
             resultPreviewTitle.textContent = pageTitle || '';
@@ -650,7 +701,8 @@
             },
             body: JSON.stringify({
                 original_url: url,
-                user_agent: navigator.userAgent || ''
+                user_agent: navigator.userAgent || '',
+                cloak: cloakEnabled.checked
             })
         })
         .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
@@ -660,7 +712,8 @@
                     r.data.short_url,
                     r.data.existing === true,
                     r.data.page_title || '',
-                    r.data.thumbnail_url || ''
+                    r.data.thumbnail_url || '',
+                    r.data.cloaked !== false
                 );
                 showToast(r.data.existing ? 'Existing short link returned.' : 'Link shortened!', 'success');
             } else {

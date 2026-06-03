@@ -70,8 +70,9 @@ POST /api/links
 | `page_title` | string | No | Override bridge preview title (max 500) |
 | `thumbnail_url` | string (URL) | No | Override bridge preview image (max 2048) |
 | `source` | string | No | Origin label (`api`, `web`, `engagyo`, etc.). Defaults to `api`. Max 64 chars, lowercase alphanumeric with `_` `-` |
+| `cloak` | boolean | No | `true` (default) = bridge preview page. `false` = direct 302 redirect |
 
-If `page_title` / `thumbnail_url` are omitted, the server fetches Open Graph metadata from `original_url` when possible.
+If `page_title` / `thumbnail_url` are omitted and cloaking is enabled, the server fetches Open Graph metadata from `original_url` when possible.
 
 #### Example (JSON)
 
