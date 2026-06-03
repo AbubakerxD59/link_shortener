@@ -102,6 +102,7 @@ class UrlShortenerService
             'short_code' => $shortLink->short_code,
             'original_url' => $shortLink->original_url,
             'redirect_mode' => $shortLink->redirect_mode ?? ShortLink::REDIRECT_BRIDGE,
+            'url_cloak' => $shortLink->urlCloakValue(),
             'cloaked' => $shortLink->isCloaked(),
             'bridge_delay_seconds' => (int) ($shortLink->bridge_delay_seconds ?? 0),
             'page_title' => $shortLink->page_title,

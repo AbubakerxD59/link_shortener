@@ -37,7 +37,55 @@ class ShortLinkStoreTest extends TestCase
             'redirect_mode' => 'bridge',
             'source' => 'api',
         ]);
+        $response->assertJsonPath('url_cloak', 1);
         $response->assertJsonPath('cloaked', true);
+    }
+
+    public function test_api_url_cloak_zero_creates_direct_link(): void
+    {
+        Http::fake();
+
+        $response = $this->postJson('/api/links', [
+            'original_url' => 'https://example.com/direct',
+            'url_cloak' => 0,
+        ]);
+
+        $response->assertCreated();
+        $response->assertJsonPath('url_cloak', 0);
+        $response->assertJsonPath('redirect_mode', 'direct');
+        $response->assertJsonPath('cloaked', false);
+
+        $this->assertDatabaseHas('short_links', [
+            'original_url' => 'https://example.com/direct',
+            'redirect_mode' => 'direct',
+        ]);
+    }
+
+    public function test_api_url_cloak_one_creates_bridge_link(): void
+    {
+        Http::fake([
+            'https://example.com/cloaked' => Http::response('<html><head><title>Cloaked</title></head></html>', 200),
+        ]);
+
+        $response = $this->postJson('/api/links', [
+            'original_url' => 'https://example.com/cloaked',
+            'url_cloak' => 1,
+        ]);
+
+        $response->assertCreated();
+        $response->assertJsonPath('url_cloak', 1);
+        $response->assertJsonPath('redirect_mode', 'bridge');
+    }
+
+    public function test_api_rejects_invalid_url_cloak(): void
+    {
+        $response = $this->postJson('/api/links', [
+            'original_url' => 'https://example.com/page',
+            'url_cloak' => 2,
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors(['url_cloak']);
     }
 
     public function test_api_accepts_optional_preview_fields(): void

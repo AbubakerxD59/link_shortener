@@ -375,7 +375,7 @@
                 </div>
 
                 <div class="callout">
-                    <strong>Link cloaking:</strong> Set <code>cloak: true</code> (default) for a bridge page with preview; set <code>cloak: false</code> for an instant 302 redirect to the destination.
+                    <strong>Link cloaking:</strong> Set <code>url_cloak: 1</code> (default) for a bridge page with preview; set <code>url_cloak: 0</code> for an instant 302 redirect to the destination.
                 </div>
             </section>
 
@@ -449,10 +449,10 @@
                                         <td>Origin label (e.g. <code>api</code>, <code>engagyo</code>). Defaults to <code>api</code></td>
                                     </tr>
                                     <tr>
-                                        <td><code>cloak</code></td>
-                                        <td>boolean</td>
+                                        <td><code>url_cloak</code></td>
+                                        <td>integer</td>
                                         <td>No</td>
-                                        <td><code>true</code> = bridge page (default). <code>false</code> = direct 302 redirect</td>
+                                        <td><code>1</code> = bridge page (default). <code>0</code> = direct 302 redirect</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -489,6 +489,8 @@
   "page_title": "Example Blog Post",
   "thumbnail_url": "https://example.com/og-image.jpg",
   "source": "api",
+  "url_cloak": 1,
+  "cloaked": true,
   "clicks": 0,
   "existing": false,
   "created_at": "2026-05-26T14:30:00+00:00"
@@ -550,6 +552,8 @@
   "page_title": "Example Blog Post",
   "thumbnail_url": "https://example.com/og-image.jpg",
   "source": "api",
+  "url_cloak": 1,
+  "cloaked": true,
   "clicks": 42,
   "user_id": null,
   "created_at": "2026-05-26T14:30:00+00:00",
@@ -639,7 +643,8 @@
                             <tr><td><code>short_code</code></td><td>Code used in <code>/s/{code}</code></td></tr>
                             <tr><td><code>original_url</code></td><td>Normalized destination</td></tr>
                             <tr><td><code>redirect_mode</code></td><td><code>bridge</code> or <code>direct</code></td></tr>
-                            <tr><td><code>cloaked</code></td><td><code>true</code> when bridge page is used</td></tr>
+                            <tr><td><code>url_cloak</code></td><td><code>1</code> (bridge) or <code>0</code> (direct)</td></tr>
+                            <tr><td><code>cloaked</code></td><td>Boolean alias of <code>url_cloak</code></td></tr>
                             <tr><td><code>page_title</code></td><td>Bridge preview title</td></tr>
                             <tr><td><code>thumbnail_url</code></td><td>Preview image URL (nullable)</td></tr>
                             <tr><td><code>source</code></td><td>Where the link was created (<code>web</code>, <code>api</code>, or custom)</td></tr>

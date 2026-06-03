@@ -39,7 +39,7 @@ Source files: `docs/API.md`, `docs/openapi.yaml`, `resources/views/docs/api.blad
 | `POST` | `/shorten` | Public shorten endpoint used by the web UI (CSRF required for browser) |
 | `GET` | `/s/{code}` | Open a short link (bridge cloaking page, then destination) |
 
-Every stored link uses **bridge-page cloaking**: visitors see a preview (title + thumbnail when available) and must click **Continue** to reach the destination. There is no auto-redirect timer.
+Use **`url_cloak`** to control behavior: `1` shows a bridge page (preview + Continue); `0` redirects directly to the destination.
 
 ---
 
@@ -70,7 +70,7 @@ POST /api/links
 | `page_title` | string | No | Override bridge preview title (max 500) |
 | `thumbnail_url` | string (URL) | No | Override bridge preview image (max 2048) |
 | `source` | string | No | Origin label (`api`, `web`, `engagyo`, etc.). Defaults to `api`. Max 64 chars, lowercase alphanumeric with `_` `-` |
-| `cloak` | boolean | No | `true` (default) = bridge preview page. `false` = direct 302 redirect |
+| `url_cloak` | integer | No | `1` (default) = bridge preview page. `0` = direct 302 redirect |
 
 If `page_title` / `thumbnail_url` are omitted and cloaking is enabled, the server fetches Open Graph metadata from `original_url` when possible.
 
@@ -82,6 +82,7 @@ curl -X POST "{APP_URL}/api/links" \
   -H "Content-Type: application/json" \
   -d '{
     "original_url": "https://example.com/blog/post",
+    "url_cloak": 1,
     "user_id": 42,
     "user_agent": "MyIntegration/1.0",
     "ip_address": "203.0.113.10"
@@ -127,6 +128,8 @@ curl -X POST "{APP_URL}/api/links" \
   "page_title": "Example Blog Post",
   "thumbnail_url": "https://example.com/og-image.jpg",
   "source": "api",
+  "url_cloak": 1,
+  "cloaked": true,
   "clicks": 0,
   "existing": false,
   "created_at": "2026-05-26T14:30:00+00:00"
@@ -144,6 +147,8 @@ curl -X POST "{APP_URL}/api/links" \
 | `page_title` | Title shown on bridge page |
 | `thumbnail_url` | Image URL for bridge preview (may be `null`) |
 | `source` | Origin label (`web`, `api`, or custom) |
+| `url_cloak` | `1` (bridge) or `0` (direct) |
+| `cloaked` | Boolean alias of `url_cloak` |
 | `clicks` | Visit count |
 | `existing` | `true` if an existing row was reused |
 | `created_at` | ISO 8601 timestamp |
@@ -318,7 +323,7 @@ Legacy values (`direct`, `meta`) in the database are still served as a bridge pa
 
 ### Deduplication
 
-A new row is **not** created when the same normalized `original_url` and `source` already exist for:
+A new row is **not** created when the same normalized `original_url`, `source`, and `url_cloak` setting already exist for:
 
 - The same `user_id`, if `user_id` is sent; otherwise
 - The same `user_agent` (non-empty), if no `user_id`; otherwise
@@ -354,6 +359,7 @@ Laravel standard validation JSON:
 | `page_title` | optional string, max 500 |
 | `thumbnail_url` | optional valid URL, max 2048 |
 | `source` | optional string, max 64 |
+| `url_cloak` | optional integer, `0` or `1` |
 
 ---
 

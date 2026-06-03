@@ -53,6 +53,24 @@ class ShortLink extends Model
         return $cloaked ? self::REDIRECT_BRIDGE : self::REDIRECT_DIRECT;
     }
 
+    public static function cloakedFromUrlCloak(int|string|bool|null $urlCloak, bool $defaultCloaked = true): bool
+    {
+        if ($urlCloak === null || $urlCloak === '') {
+            return $defaultCloaked;
+        }
+
+        if (is_bool($urlCloak)) {
+            return $urlCloak;
+        }
+
+        return (int) $urlCloak === 1;
+    }
+
+    public function urlCloakValue(): int
+    {
+        return $this->isCloaked() ? 1 : 0;
+    }
+
     public function displayTitle(?string $destinationHost = null): string
     {
         if ($this->page_title) {

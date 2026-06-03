@@ -15,12 +15,13 @@ class ShortLinkController extends Controller
     /**
      * Store a short link (JSON body or form params).
      *
-     * Params: original_url (required), cloak, user_id, user_agent, ip_address, page_title, thumbnail_url, source (optional)
+     * Params: original_url (required), url_cloak (0|1), user_id, user_agent, ip_address, page_title, thumbnail_url, source (optional)
      */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'original_url' => 'required|url|max:2048',
+            'url_cloak' => 'nullable|integer|in:0,1',
             'user_id' => 'nullable|integer|min:1',
             'user_agent' => 'nullable|string|max:65535',
             'ip_address' => 'nullable|ip',
@@ -32,6 +33,9 @@ class ShortLinkController extends Controller
 
         $userAgent = $validated['user_agent'] ?? $request->userAgent();
         $ipAddress = $validated['ip_address'] ?? $request->ip();
+        $cloaked = array_key_exists('url_cloak', $validated)
+            ? ShortLink::cloakedFromUrlCloak($validated['url_cloak'])
+            : ShortLink::cloakedFromUrlCloak($request->input('cloak'), true);
 
         $result = $this->urlShortener->shortenPublic(
             $validated['original_url'],
@@ -41,7 +45,7 @@ class ShortLinkController extends Controller
             $validated['page_title'] ?? null,
             $validated['thumbnail_url'] ?? null,
             $validated['source'] ?? ShortLink::SOURCE_API,
-            $request->boolean('cloak', true),
+            $cloaked,
         );
 
         if (! $result['success']) {
