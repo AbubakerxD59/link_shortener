@@ -20,6 +20,7 @@ class UrlShortenerService
         ?string $thumbnailUrl = null,
         ?string $source = null,
         bool $cloaked = true,
+        ?int $customDomainId = null,
     ): array {
         $source = ShortLink::normalizeSource($source, ShortLink::SOURCE_WEB);
         $redirectMode = ShortLink::redirectModeFromCloak($cloaked);
@@ -42,12 +43,14 @@ class UrlShortenerService
             ];
         }
 
-        $existing = $this->findExistingShortLink($normalizedUrl, $userId, $userAgent, $source, $redirectMode);
+        $existing = $this->findExistingShortLink($normalizedUrl, $userId, $userAgent, $source, $redirectMode, $customDomainId);
 
         if ($existing) {
             if ($cloaked && (! $existing->page_title || ! $existing->thumbnail_url)) {
                 $existing->ensureLinkPreview($this->linkPreview);
             }
+
+            $existing->loadMissing('customDomain');
 
             return $this->formatSuccessResponse($existing, true);
         }
@@ -59,6 +62,7 @@ class UrlShortenerService
 
         $shortLink = ShortLink::create([
             'user_id' => $userId,
+            'custom_domain_id' => $customDomainId,
             'short_code' => $shortCode,
             'original_url' => $normalizedUrl,
             'redirect_mode' => $redirectMode,
@@ -69,6 +73,8 @@ class UrlShortenerService
             'user_agent' => $userAgent ? substr($userAgent, 0, 65535) : null,
             'ip_address' => $ipAddress,
         ]);
+
+        $shortLink->load('customDomain');
 
         return $this->formatSuccessResponse($shortLink, false);
     }
@@ -95,11 +101,15 @@ class UrlShortenerService
      */
     public function linkDetails(ShortLink $shortLink): array
     {
+        $domainService = app(CustomDomainService::class);
+
         return [
             'success' => true,
             'id' => $shortLink->id,
-            'short_url' => $this->buildShortUrl($shortLink->short_code),
+            'short_url' => $domainService->buildShortUrlForLink($shortLink),
             'short_code' => $shortLink->short_code,
+            'custom_domain_id' => $shortLink->custom_domain_id,
+            'link_domain' => $domainService->linkDomainLabel($shortLink->customDomain),
             'original_url' => $shortLink->original_url,
             'redirect_mode' => $shortLink->redirect_mode ?? ShortLink::REDIRECT_BRIDGE,
             'url_cloak' => $shortLink->urlCloakValue(),
@@ -126,6 +136,7 @@ class UrlShortenerService
         ?string $userAgent,
         string $source,
         string $redirectMode,
+        ?int $customDomainId = null,
     ): ?ShortLink {
         $query = ShortLink::query()
             ->where('original_url', $normalizedUrl)
@@ -143,7 +154,14 @@ class UrlShortenerService
             });
 
         if ($userId !== null) {
-            return $query->where('user_id', $userId)->first();
+            return $query
+                ->where('user_id', $userId)
+                ->when(
+                    $customDomainId !== null,
+                    fn ($q) => $q->where('custom_domain_id', $customDomainId),
+                    fn ($q) => $q->whereNull('custom_domain_id')
+                )
+                ->first();
         }
 
         if ($userAgent !== null && $userAgent !== '') {
@@ -265,8 +283,4 @@ class UrlShortenerService
             ->exists();
     }
 
-    public function buildShortUrl(string $shortCode): string
-    {
-        return rtrim(config('app.url'), '/').'/s/'.$shortCode;
-    }
 }

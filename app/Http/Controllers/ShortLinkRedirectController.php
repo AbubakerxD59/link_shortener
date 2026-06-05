@@ -2,20 +2,45 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CustomDomain;
 use App\Models\ShortLink;
+use App\Services\CustomDomainService;
 use App\Services\LinkPreviewService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class ShortLinkRedirectController extends Controller
 {
-    public function __construct(protected LinkPreviewService $linkPreview) {}
+    public function __construct(
+        protected LinkPreviewService $linkPreview,
+        protected CustomDomainService $customDomains,
+    ) {}
 
-    public function __invoke(string $code): RedirectResponse|View
+    public function __invoke(Request $request, string $code): RedirectResponse|View
     {
         $shortLink = ShortLink::where('short_code', $code)->first();
 
         if (! $shortLink) {
+            abort(404, 'Short link not found.');
+        }
+
+        $requestHost = CustomDomain::normalizeHost($request->getHost());
+        $appHost = $this->customDomains->appHost();
+
+        if ($shortLink->custom_domain_id) {
+            $shortLink->loadMissing('customDomain');
+            $linkDomain = $shortLink->customDomain;
+
+            if (
+                ! $linkDomain
+                || ! $linkDomain->isVerified()
+                || $requestHost !== $linkDomain->domain
+                || $shortLink->user_id !== $linkDomain->user_id
+            ) {
+                abort(404, 'Short link not found.');
+            }
+        } elseif ($requestHost !== $appHost) {
             abort(404, 'Short link not found.');
         }
 

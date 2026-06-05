@@ -137,6 +137,43 @@
             background: var(--accent-soft);
         }
 
+        .header-nav .user-greeting {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--ink-soft);
+            padding: 0.5rem 0.875rem;
+        }
+
+        .header-nav .logout-form {
+            display: inline;
+            margin: 0;
+        }
+
+        .header-nav .logout-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            color: var(--muted);
+            background: none;
+            border: none;
+            padding: 0;
+            border-radius: var(--radius-pill);
+            cursor: pointer;
+            transition: color 0.2s, background 0.2s;
+        }
+
+        .header-nav .logout-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .header-nav .logout-btn:hover {
+            color: var(--ink);
+            background: var(--surface);
+        }
+
         .site-footer {
             margin-top: auto;
             padding: 2.5rem 0 3rem;
@@ -270,6 +307,24 @@
             <nav class="header-nav" aria-label="Main">
                 <a href="{{ route('home') }}" @if(request()->routeIs('home')) class="active" @endif>Home</a>
                 <a href="{{ route('docs') }}" @if(request()->routeIs('docs')) class="active" @endif>API Docs</a>
+                @auth
+                    <a href="{{ route('dashboard') }}" @if(request()->routeIs('dashboard')) class="active" @endif>Dashboard</a>
+                    <a href="{{ route('branded-domains.index') }}" @if(request()->routeIs('branded-domains.*')) class="active" @endif>Branded Domains</a>
+                    <span class="user-greeting">{{ auth()->user()->name }}</span>
+                    <form class="logout-form" method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="logout-btn" aria-label="Log out" title="Log out">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                <polyline points="16 17 21 12 16 7"/>
+                                <line x1="21" y1="12" x2="9" y2="12"/>
+                            </svg>
+                        </button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}" @if(request()->routeIs('login')) class="active" @endif>Log in</a>
+                    <a href="{{ route('register') }}" @if(request()->routeIs('register')) class="active" @endif>Sign up</a>
+                @endauth
             </nav>
         </div>
     </header>

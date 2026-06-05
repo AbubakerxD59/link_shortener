@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\LinkPreviewService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ShortLink extends Model
 {
@@ -26,6 +27,7 @@ class ShortLink extends Model
 
     protected $fillable = [
         'user_id',
+        'custom_domain_id',
         'short_code',
         'original_url',
         'redirect_mode',
@@ -42,6 +44,11 @@ class ShortLink extends Model
         'clicks' => 'integer',
         'bridge_delay_seconds' => 'integer',
     ];
+
+    public function customDomain(): BelongsTo
+    {
+        return $this->belongsTo(CustomDomain::class);
+    }
 
     public function isCloaked(): bool
     {

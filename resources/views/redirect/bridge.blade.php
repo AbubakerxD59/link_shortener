@@ -140,7 +140,7 @@
         </article>
 
         <h1>Continue to this link?</h1>
-        <p class="lead">You are leaving {{ parse_url(config('app.url'), PHP_URL_HOST) }}. Click Continue when you are ready.</p>
+        <p class="lead">You are leaving {{ request()->getHost() }}. Click Continue when you are ready.</p>
         <a class="btn-continue" id="continue-link" href="{{ $destinationUrl }}" rel="noopener noreferrer">Continue</a>
     </div>
 </body>
