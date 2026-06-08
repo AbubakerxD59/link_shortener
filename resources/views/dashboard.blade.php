@@ -485,10 +485,9 @@
                         @foreach ($domainOptions as $option)
                             <option value="{{ $option['id'] ?? '' }}">
                                 @if ($option['type'] === 'default')
-                                    {{ $option['label'] }} (default)
+                                    {{ $option['label'] }}
                                 @else
                                     {{ $option['label'] }}@if (!empty($option['is_default']))
-                                        — account default
                                     @endif
                                 @endif
                             </option>
