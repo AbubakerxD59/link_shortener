@@ -1,17 +1,4 @@
 <tr data-link-id="{{ $link['id'] }}" data-short-code="{{ $link['short_code'] }}">
-    <td>
-        <div class="link-preview">
-            @if ($link['thumbnail_url'])
-                <img src="{{ $link['thumbnail_url'] }}" alt="" width="40" height="40">
-            @else
-                <div class="link-preview-placeholder" aria-hidden="true">🔗</div>
-            @endif
-            <div>
-                <p class="link-preview-title">{{ $link['page_title'] ?: $link['short_code'] }}</p>
-                <p class="link-preview-id">#{{ $link['id'] }}</p>
-            </div>
-        </div>
-    </td>
     <td class="short-url-cell">
         <div class="short-url-row">
             <span class="short-url-code">{{ $link['short_code'] }}</span>
@@ -25,14 +12,6 @@
         <p class="short-url-full">{{ $link['short_url'] }}</p>
     </td>
     <td>
-        <span class="badge badge-source">{{ $link['link_domain'] ?? parse_url(config('app.url'), PHP_URL_HOST) }}</span>
-    </td>
-    <td>
-        <div class="dest-url">
-            <a href="{{ $link['original_url'] }}" target="_blank" rel="noopener noreferrer">{{ $link['original_url'] }}</a>
-        </div>
-    </td>
-    <td>
         <span class="clicks-count">{{ $link['clicks'] }}</span>
     </td>
     <td>
@@ -44,21 +23,5 @@
     </td>
     <td>
         <span class="badge badge-source">{{ $link['source'] ?? 'web' }}</span>
-    </td>
-    <td class="date-cell">
-        @if ($link['created_at'])
-            {{ \Carbon\Carbon::parse($link['created_at'])->format('M j, Y') }}<br>
-            {{ \Carbon\Carbon::parse($link['created_at'])->format('g:i A') }}
-        @else
-            —
-        @endif
-    </td>
-    <td class="date-cell">
-        @if ($link['updated_at'])
-            {{ \Carbon\Carbon::parse($link['updated_at'])->format('M j, Y') }}<br>
-            {{ \Carbon\Carbon::parse($link['updated_at'])->format('g:i A') }}
-        @else
-            —
-        @endif
     </td>
 </tr>

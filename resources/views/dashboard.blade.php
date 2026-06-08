@@ -204,7 +204,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 0.875rem;
-            min-width: 960px;
+            min-width: 560px;
         }
 
         .links-table th,
@@ -230,49 +230,6 @@
 
         .links-table tbody tr:hover {
             background: var(--accent-soft);
-        }
-
-        .link-preview {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            min-width: 180px;
-        }
-
-        .link-preview img {
-            width: 40px;
-            height: 40px;
-            object-fit: cover;
-            border-radius: 8px;
-            background: var(--surface);
-            flex-shrink: 0;
-        }
-
-        .link-preview-placeholder {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            background: var(--surface);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--muted);
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-
-        .link-preview-title {
-            font-weight: 600;
-            color: var(--ink);
-            line-height: 1.35;
-            margin: 0 0 0.125rem;
-            word-break: break-word;
-        }
-
-        .link-preview-id {
-            font-size: 0.75rem;
-            color: var(--muted);
-            margin: 0;
         }
 
         .short-url-cell {
@@ -326,23 +283,6 @@
             height: 14px;
         }
 
-        .dest-url {
-            max-width: 220px;
-            word-break: break-all;
-            color: var(--ink-soft);
-            line-height: 1.45;
-        }
-
-        .dest-url a {
-            color: inherit;
-            text-decoration: none;
-        }
-
-        .dest-url a:hover {
-            color: var(--accent);
-            text-decoration: underline;
-        }
-
         .badge {
             display: inline-flex;
             align-items: center;
@@ -374,13 +314,6 @@
             font-weight: 600;
             font-size: 1rem;
             color: var(--ink);
-        }
-
-        .date-cell {
-            font-size: 0.8125rem;
-            color: var(--muted);
-            white-space: nowrap;
-            line-height: 1.5;
         }
 
         .empty-state {
@@ -533,15 +466,10 @@
                         <table class="links-table" id="links-table">
                             <thead>
                                 <tr>
-                                    <th>Preview</th>
                                     <th>Short link</th>
-                                    <th>Domain</th>
-                                    <th>Destination</th>
                                     <th>Clicks</th>
                                     <th>Cloaking</th>
                                     <th>Source</th>
-                                    <th>Created</th>
-                                    <th>Updated</th>
                                 </tr>
                             </thead>
                             <tbody id="links-tbody">
@@ -614,37 +542,13 @@
                     .replace(/"/g, '&quot;');
             }
 
-            function formatDate(iso) {
-                if (!iso) return '—';
-                var d = new Date(iso);
-                if (isNaN(d.getTime())) return '—';
-                return d.toLocaleDateString(undefined, {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                    }) +
-                    '<br>' +
-                    d.toLocaleTimeString(undefined, {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-            }
-
             function buildRowHtml(link) {
-                var title = link.page_title || link.short_code || 'Untitled';
-                var previewImg = link.thumbnail_url ?
-                    '<img src="' + escapeHtml(link.thumbnail_url) + '" alt="" width="40" height="40">' :
-                    '<div class="link-preview-placeholder" aria-hidden="true">🔗</div>';
-
                 var cloakBadge = link.cloaked ?
                     '<span class="badge badge-cloak-on">On</span>' :
                     '<span class="badge badge-cloak-off">Off</span>';
 
                 return '<tr data-link-id="' + escapeHtml(String(link.id)) + '" data-short-code="' + escapeHtml(link
                         .short_code) + '">' +
-                    '<td><div class="link-preview">' + previewImg +
-                    '<div><p class="link-preview-title">' + escapeHtml(title) + '</p>' +
-                    '<p class="link-preview-id">#' + escapeHtml(String(link.id)) + '</p></div></div></td>' +
                     '<td class="short-url-cell"><div class="short-url-row">' +
                     '<span class="short-url-code">' + escapeHtml(link.short_code) + '</span>' +
                     '<button type="button" class="copy-btn" data-copy-url="' + escapeHtml(link.short_url) +
@@ -652,15 +556,9 @@
                     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
                     '</button></div>' +
                     '<p class="short-url-full">' + escapeHtml(link.short_url) + '</p></td>' +
-                    '<td><span class="badge badge-source">' + escapeHtml(link.link_domain || '') + '</span></td>' +
-                    '<td><div class="dest-url"><a href="' + escapeHtml(link.original_url) +
-                    '" target="_blank" rel="noopener noreferrer">' +
-                    escapeHtml(link.original_url) + '</a></div></td>' +
                     '<td><span class="clicks-count">' + escapeHtml(String(link.clicks || 0)) + '</span></td>' +
                     '<td>' + cloakBadge + '</td>' +
                     '<td><span class="badge badge-source">' + escapeHtml(link.source || 'web') + '</span></td>' +
-                    '<td class="date-cell">' + formatDate(link.created_at) + '</td>' +
-                    '<td class="date-cell">' + formatDate(link.updated_at) + '</td>' +
                     '</tr>';
             }
 
@@ -673,8 +571,7 @@
 
                 linksTableWrap.innerHTML = '<table class="links-table" id="links-table">' +
                     '<thead><tr>' +
-                    '<th>Preview</th><th>Short link</th><th>Domain</th><th>Destination</th><th>Clicks</th>' +
-                    '<th>Cloaking</th><th>Source</th><th>Created</th><th>Updated</th>' +
+                    '<th>Short link</th><th>Clicks</th><th>Cloaking</th><th>Source</th>' +
                     '</tr></thead><tbody id="links-tbody"></tbody></table>';
 
                 linksTbody = document.getElementById('links-tbody');
