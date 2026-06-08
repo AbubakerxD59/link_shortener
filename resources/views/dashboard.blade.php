@@ -470,7 +470,7 @@
 
                 <div class="cloak-options">
                     <label class="cloak-toggle" for="cloak-enabled">
-                        <input type="checkbox" id="cloak-enabled" name="cloak" checked>
+                        <input type="checkbox" id="cloak-enabled" name="cloak">
                         <span class="cloak-toggle-text">
                             <strong>Enable link cloaking</strong>
                             <span>When on, visitors see a preview page before continuing. When off, they go straight to the

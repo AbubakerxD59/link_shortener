@@ -52,7 +52,7 @@ class ShortenController extends Controller
             null,
             null,
             ShortLink::SOURCE_WEB,
-            $request->boolean('cloak', true),
+            $request->boolean('cloak', false),
             $customDomainId,
         );
 
