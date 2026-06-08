@@ -18,19 +18,14 @@ return [
     | CNAME target hostname
     |--------------------------------------------------------------------------
     |
-    | Users point their branded subdomain CNAME to this host (defaults to APP_URL).
-    | Example: go.brand.com CNAME → short.example.com
+    | Users create a CNAME on their subdomain pointing to this host.
+    | Example: go.brand.com CNAME → cname.yourshortener.com
+    |
+    | Set this to a stable hostname in production (not localhost).
+    | Defaults to the host from APP_URL when unset.
     |
     */
 
     'cname_target' => env('CUSTOM_DOMAIN_CNAME_TARGET'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | DNS verification TXT prefix
-    |--------------------------------------------------------------------------
-    */
-
-    'verification_prefix' => '_shrtlnk-verify',
 
 ];

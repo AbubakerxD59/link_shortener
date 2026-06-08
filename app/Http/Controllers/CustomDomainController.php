@@ -85,8 +85,7 @@ class CustomDomainController extends Controller
                 'success' => $result['verified'],
                 'message' => $result['message'],
                 'checks' => [
-                    'txt_ok' => $result['txt_ok'],
-                    'routing_ok' => $result['routing_ok'],
+                    'cname_ok' => $result['cname_ok'],
                 ],
                 'domain' => $this->customDomains->setupInstructions($customDomain),
             ], $result['verified'] ? 200 : 422);

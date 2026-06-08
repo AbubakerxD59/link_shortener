@@ -28,50 +28,38 @@ class CustomDomainService
         return $this->cnameTarget();
     }
 
-    public function verificationTxtHost(string $domain): string
+    public function cnameName(string $domain): string
     {
-        return config('custom_domains.verification_prefix').'.'.$domain;
-    }
+        $domain = CustomDomain::normalizeHost($domain);
+        $dot = strpos($domain, '.');
 
-    public function verificationTxtValue(CustomDomain $customDomain): string
-    {
-        return 'shrtlnk-verify='.$customDomain->verification_token;
+        return $dot === false ? $domain : substr($domain, 0, $dot);
     }
 
     /**
      * @return array{
      *     verified: bool,
-     *     txt_ok: bool,
-     *     routing_ok: bool,
-     *     txt_host: string,
-     *     txt_value: string,
+     *     cname_ok: bool,
+     *     cname_name: string,
      *     cname_target: string,
      *     message: string
      * }
      */
     public function verify(CustomDomain $customDomain): array
     {
-        $txtHost = $this->verificationTxtHost($customDomain->domain);
-        $txtValue = $this->verificationTxtValue($customDomain);
         $cnameTarget = $this->cnameTarget();
+        $cnameOk = $this->domainRoutesToApp($customDomain->domain, $cnameTarget);
 
-        $txtOk = in_array($txtValue, $this->dnsLookup->txtRecords($txtHost), true);
-        $routingOk = $this->domainRoutesToApp($customDomain->domain, $cnameTarget);
-
-        $verified = $txtOk && $routingOk;
-
-        if ($verified) {
+        if ($cnameOk) {
             $customDomain->update(['verified_at' => now()]);
         }
 
         return [
-            'verified' => $verified,
-            'txt_ok' => $txtOk,
-            'routing_ok' => $routingOk,
-            'txt_host' => $txtHost,
-            'txt_value' => $txtValue,
+            'verified' => $cnameOk,
+            'cname_ok' => $cnameOk,
+            'cname_name' => $this->cnameName($customDomain->domain),
             'cname_target' => $cnameTarget,
-            'message' => $this->verificationMessage($txtOk, $routingOk),
+            'message' => $this->verificationMessage($cnameOk),
         ];
     }
 
@@ -84,13 +72,6 @@ class CustomDomainService
             if ($this->hostnamesMatch($target, $cnameTarget)) {
                 return true;
             }
-        }
-
-        $appIps = $this->dnsLookup->aRecords($cnameTarget);
-        $domainIps = $this->dnsLookup->aRecords($domain);
-
-        if ($appIps !== [] && $domainIps !== [] && array_intersect($appIps, $domainIps) !== []) {
-            return true;
         }
 
         return false;
@@ -182,20 +163,15 @@ class CustomDomainService
     public function setupInstructions(CustomDomain $customDomain): array
     {
         $cnameTarget = $this->cnameTarget();
-        $txtHost = $this->verificationTxtHost($customDomain->domain);
-        $txtValue = $this->verificationTxtValue($customDomain);
-        $appUrl = rtrim(config('app.url'), '/');
+        $cnameName = $this->cnameName($customDomain->domain);
         $exampleShortUrl = rtrim(config('custom_domains.scheme', 'https').'://'.$customDomain->domain, '/').'/s/abc123';
 
         return [
             'domain' => $customDomain->domain,
             'verified' => $customDomain->isVerified(),
             'cname_target' => $cnameTarget,
-            'txt_host' => $txtHost,
-            'txt_value' => $txtValue,
+            'cname_name' => $cnameName,
             'example_short_url' => $exampleShortUrl,
-            'app_url' => $appUrl,
-            'app_host' => $this->appHost(),
         ];
     }
 
@@ -282,20 +258,12 @@ class CustomDomainService
         );
     }
 
-    protected function verificationMessage(bool $txtOk, bool $routingOk): string
+    protected function verificationMessage(bool $cnameOk): string
     {
-        if ($txtOk && $routingOk) {
+        if ($cnameOk) {
             return 'Domain verified. Your short links will now use your branded domain.';
         }
 
-        if (! $txtOk && ! $routingOk) {
-            return 'DNS records not detected yet. Add the TXT and CNAME/A records below, wait for propagation, then verify again.';
-        }
-
-        if (! $txtOk) {
-            return 'Ownership TXT record not found yet. Confirm the TXT host and value, then verify again.';
-        }
-
-        return 'Traffic routing record not found yet. Point your domain to '.$this->cnameTarget().' with CNAME or A record, then verify again.';
+        return 'DNS record not detected yet. Add the CNAME record below, wait for propagation, then refresh.';
     }
 }

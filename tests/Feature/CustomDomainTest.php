@@ -16,22 +16,12 @@ class CustomDomainTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function mockVerifiedDns(string $domain, string $token): void
+    protected function mockVerifiedDns(string $domain, string $cnameTarget = '127.0.0.1'): void
     {
         $dns = Mockery::mock(DnsLookup::class);
-        $dns->shouldReceive('txtRecords')
-            ->with('_shrtlnk-verify.'.$domain)
-            ->andReturn(['shrtlnk-verify='.$token]);
         $dns->shouldReceive('cnameTargets')
             ->with($domain)
-            ->andReturn(['127.0.0.1']);
-        $dns->shouldReceive('aRecords')->andReturn([]);
-        $dns->shouldReceive('aRecords')
-            ->with('127.0.0.1')
-            ->andReturn(['203.0.113.10']);
-        $dns->shouldReceive('aRecords')
-            ->with($domain)
-            ->andReturn(['203.0.113.10']);
+            ->andReturn([$cnameTarget]);
 
         $this->instance(DnsLookup::class, $dns);
     }
@@ -101,12 +91,15 @@ class CustomDomainTest extends TestCase
             'verification_token' => 'token123',
         ]);
 
+        config(['app.url' => 'http://127.0.0.1:8000']);
+
         $this->actingAs($user)
             ->get(route('branded-domains.show', $domain))
             ->assertOk()
             ->assertSee('go.brand.test')
-            ->assertSee('How to connect')
-            ->assertSee('_shrtlnk-verify.go.brand.test');
+            ->assertSee('DNS setup required for go.brand.test')
+            ->assertSee('127.0.0.1')
+            ->assertSee("'go'");
     }
 
     public function test_guest_cannot_manage_custom_domain(): void
@@ -126,7 +119,7 @@ class CustomDomainTest extends TestCase
             'verification_token' => 'token123',
         ]);
 
-        $this->mockVerifiedDns('go.brand.test', 'token123');
+        $this->mockVerifiedDns('go.brand.test', '127.0.0.1');
 
         $this->actingAs($user)
             ->post(route('branded-domains.verify', $customDomain))

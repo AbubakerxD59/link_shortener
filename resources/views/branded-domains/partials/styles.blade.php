@@ -393,9 +393,64 @@
         line-height: 1.6;
     }
 
+    .domain-note-info {
+        background: #eff6ff;
+        border: 1px solid rgba(37, 99, 235, 0.15);
+        color: #1e40af;
+        margin-bottom: 1.25rem;
+    }
+
     .domain-note-success {
         background: var(--success-soft);
         border: 1px solid rgba(5, 150, 105, 0.15);
+    }
+
+    .dns-table-label {
+        margin: 0 0 0.75rem;
+        font-size: 0.9375rem;
+        color: var(--ink-soft);
+    }
+
+    .dns-record-table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        margin-bottom: 1.25rem;
+    }
+
+    .dns-record-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9375rem;
+        min-width: 360px;
+    }
+
+    .dns-record-table th,
+    .dns-record-table td {
+        padding: 0.875rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+        vertical-align: middle;
+    }
+
+    .dns-record-table th {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        background: var(--surface);
+        width: 33.33%;
+    }
+
+    .dns-record-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .dns-record-table code {
+        font-family: ui-monospace, 'Cascadia Code', monospace;
+        font-size: 0.875rem;
+        word-break: break-all;
     }
 
     .domain-note strong {

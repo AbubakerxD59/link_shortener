@@ -20,7 +20,7 @@
             <div class="domain-panel-header">
                 <div>
                     <h1>{{ $customDomain->domain }}</h1>
-                    <p class="domain-lead">Follow the simple steps below — no technical background needed. Copy two settings into your domain provider, wait a few minutes, then check that everything is connected.</p>
+                    <p class="domain-lead">Add one CNAME record at your domain registrar, then refresh to activate your branded short links.</p>
                 </div>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end;">
                     @if ($customDomain->isVerified())
@@ -51,10 +51,16 @@
             @include('branded-domains.partials.setup-instructions', ['domainSetup' => $domainSetup])
 
             <div class="domain-actions">
+                <button
+                    type="button"
+                    class="btn btn-outline"
+                    data-copy-text="TYPE: CNAME&#10;NAME: {{ $domainSetup['cname_name'] }}&#10;VALUE: {{ $domainSetup['cname_target'] }}"
+                >Copy</button>
+
                 @unless ($customDomain->isVerified())
                     <form method="POST" action="{{ route('branded-domains.verify', $customDomain) }}">
                         @csrf
-                        <button type="submit" class="btn btn-primary">Check my setup</button>
+                        <button type="submit" class="btn btn-primary">Refresh</button>
                     </form>
                 @endunless
 

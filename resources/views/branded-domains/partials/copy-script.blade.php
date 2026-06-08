@@ -22,7 +22,7 @@
     }
 
     document.addEventListener('click', function(e) {
-        var copyBtn = e.target.closest('.copy-btn');
+        var copyBtn = e.target.closest('[data-copy-text]');
         if (!copyBtn) return;
         var text = copyBtn.getAttribute('data-copy-text');
         if (!text) return;
