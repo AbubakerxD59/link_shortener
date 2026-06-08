@@ -8,9 +8,16 @@ use Illuminate\Support\Str;
 
 class CustomDomain extends Model
 {
+    public const TYPE_APEX = 'apex';
+
+    public const TYPE_SUBDOMAIN = 'subdomain';
+
     protected $fillable = [
         'user_id',
         'domain',
+        'domain_type',
+        'base_domain',
+        'subdomain_prefix',
         'verification_token',
         'verified_at',
         'is_default',
@@ -29,6 +36,16 @@ class CustomDomain extends Model
     public function isVerified(): bool
     {
         return $this->verified_at !== null;
+    }
+
+    public function isApex(): bool
+    {
+        return $this->domain_type === self::TYPE_APEX;
+    }
+
+    public function isSubdomain(): bool
+    {
+        return $this->domain_type === self::TYPE_SUBDOMAIN;
     }
 
     public static function defaultForUser(int $userId): ?self

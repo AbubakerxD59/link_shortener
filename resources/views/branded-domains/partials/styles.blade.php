@@ -146,6 +146,108 @@
         color: var(--muted);
     }
 
+    .domain-type-fieldset {
+        border: 0;
+        margin: 1.25rem 0 0;
+        padding: 0;
+    }
+
+    .domain-type-fieldset .domain-label {
+        margin-bottom: 0.75rem;
+    }
+
+    .domain-type-options {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .domain-type-option {
+        display: block;
+        cursor: pointer;
+    }
+
+    .domain-type-option input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .domain-type-card {
+        display: block;
+        padding: 0.875rem 1rem;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-lg);
+        background: var(--card);
+        transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    }
+
+    .domain-type-card strong {
+        display: block;
+        margin-bottom: 0.25rem;
+        color: var(--ink);
+        font-size: 0.9375rem;
+    }
+
+    .domain-type-card span {
+        display: block;
+        font-size: 0.8125rem;
+        color: var(--muted);
+        line-height: 1.5;
+    }
+
+    .domain-type-option input:checked + .domain-type-card {
+        border-color: var(--accent-light);
+        background: var(--accent-soft);
+        box-shadow: 0 0 0 4px rgba(109, 40, 217, 0.08);
+    }
+
+    .domain-type-option input:focus-visible + .domain-type-card {
+        outline: 2px solid var(--accent-light);
+        outline-offset: 2px;
+    }
+
+    .subdomain-prefix-wrap {
+        margin-top: 1.25rem;
+    }
+
+    .subdomain-prefix-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .subdomain-prefix-input {
+        flex: 0 1 160px;
+        min-width: 120px;
+    }
+
+    .subdomain-suffix {
+        font-size: 0.9375rem;
+        color: var(--muted);
+        font-family: ui-monospace, 'Cascadia Code', monospace;
+    }
+
+    .domain-preview {
+        margin: 1.25rem 0 0;
+        padding: 0.875rem 1rem;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        font-size: 0.9375rem;
+        color: var(--ink-soft);
+    }
+
+    .domain-preview code {
+        font-family: ui-monospace, 'Cascadia Code', monospace;
+        font-size: 0.9375rem;
+        color: var(--accent);
+    }
+
+    .domain-form-actions {
+        margin-top: 1.25rem;
+    }
+
     .domain-hint code,
     .domain-note code,
     .dns-value,

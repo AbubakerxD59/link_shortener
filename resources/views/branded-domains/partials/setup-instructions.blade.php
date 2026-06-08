@@ -1,3 +1,7 @@
+@php
+    $primaryRecord = $domainSetup['dns_records'][0] ?? null;
+@endphp
+
 <div class="domain-setup">
     <div class="setup-intro">
         <h2>DNS setup required for {{ $domainSetup['domain'] }}</h2>
@@ -15,7 +19,7 @@
             <div class="plain-step-head">
                 <span class="setup-step-num">1</span>
                 <div>
-                    <p>Go to your domain registrar, sign in, and locate the domain DNS Manage section.</p>
+                    <p>Go to your domain registrar, sign in, and locate the DNS Manage section for <strong>{{ $domainSetup['base_domain'] }}</strong>.</p>
                 </div>
             </div>
         </article>
@@ -24,11 +28,13 @@
             <div class="plain-step-head">
                 <span class="setup-step-num">2</span>
                 <div>
-                    <p>
-                        Create a new type <strong>CNAME</strong> record with a name
-                        <strong>'{{ $domainSetup['cname_name'] }}'</strong> (no quotes) and value
-                        <strong>'{{ $domainSetup['cname_target'] }}'</strong> (no quotes). Save changes.
-                    </p>
+                    @if ($primaryRecord)
+                        <p>
+                            Create a new type <strong>{{ $primaryRecord['type'] }}</strong> record with a name
+                            <strong>'{{ $primaryRecord['name'] }}'</strong> (no quotes) and value
+                            <strong>'{{ $primaryRecord['value'] }}'</strong> (no quotes). Save changes.
+                        </p>
+                    @endif
                 </div>
             </div>
         </article>
@@ -46,11 +52,13 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>CNAME</td>
-                    <td><code>{{ $domainSetup['cname_name'] }}</code></td>
-                    <td><code>{{ $domainSetup['cname_target'] }}</code></td>
-                </tr>
+                @foreach ($domainSetup['dns_records'] as $record)
+                    <tr>
+                        <td>{{ $record['type'] }}</td>
+                        <td><code>{{ $record['name'] }}</code></td>
+                        <td><code>{{ $record['value'] }}</code></td>
+                    </tr>
+                @endforeach
             </tbody>
         </table>
     </div>

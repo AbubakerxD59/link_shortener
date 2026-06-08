@@ -39,13 +39,17 @@ class CustomDomainController extends Controller
     public function store(Request $request): JsonResponse|RedirectResponse
     {
         $validated = $request->validate([
-            'domain' => 'required|string|max:253',
+            'base_domain' => 'required|string|max:253',
+            'domain_type' => 'required|in:apex,subdomain',
+            'subdomain_prefix' => 'nullable|required_if:domain_type,subdomain|string|max:63',
         ]);
 
         try {
             $customDomain = $this->customDomains->assignDomain(
                 $request->user(),
-                $validated['domain']
+                $validated['base_domain'],
+                $validated['domain_type'],
+                $validated['subdomain_prefix'] ?? null
             );
         } catch (\InvalidArgumentException $e) {
             if ($request->expectsJson()) {
@@ -55,7 +59,9 @@ class CustomDomainController extends Controller
                 ], 422);
             }
 
-            return back()->withErrors(['domain' => $e->getMessage()]);
+            return back()
+                ->withInput()
+                ->withErrors(['domain' => $e->getMessage()]);
         }
 
         $message = 'Branded domain added. Follow the connection steps to verify it.';
@@ -85,7 +91,7 @@ class CustomDomainController extends Controller
                 'success' => $result['verified'],
                 'message' => $result['message'],
                 'checks' => [
-                    'cname_ok' => $result['cname_ok'],
+                    'dns_ok' => $result['dns_ok'],
                 ],
                 'domain' => $this->customDomains->setupInstructions($customDomain),
             ], $result['verified'] ? 200 : 422);

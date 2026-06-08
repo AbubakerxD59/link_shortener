@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Services\DnsLookup;
 use App\Services\UrlShortenerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
 use Mockery;
 use Tests\TestCase;
 
@@ -16,7 +15,7 @@ class CustomDomainTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function mockVerifiedDns(string $domain, string $cnameTarget = '127.0.0.1'): void
+    protected function mockVerifiedSubdomainDns(string $domain, string $cnameTarget = '127.0.0.1'): void
     {
         $dns = Mockery::mock(DnsLookup::class);
         $dns->shouldReceive('cnameTargets')
@@ -24,6 +23,19 @@ class CustomDomainTest extends TestCase
             ->andReturn([$cnameTarget]);
 
         $this->instance(DnsLookup::class, $dns);
+    }
+
+
+    protected function makeSubdomain(array $overrides = []): CustomDomain
+    {
+        return CustomDomain::create(array_merge([
+            'user_id' => $overrides['user_id'] ?? User::factory()->create()->id,
+            'domain' => 'go.brand.test',
+            'domain_type' => CustomDomain::TYPE_SUBDOMAIN,
+            'base_domain' => 'brand.test',
+            'subdomain_prefix' => 'go',
+            'verification_token' => 'token123',
+        ], $overrides));
     }
 
     public function test_authenticated_user_can_view_branded_domains_page(): void
@@ -34,23 +46,53 @@ class CustomDomainTest extends TestCase
             ->get(route('branded-domains.index'))
             ->assertOk()
             ->assertSee('Branded domains')
-            ->assertSee('Add a domain');
+            ->assertSee('Add a domain')
+            ->assertSee('Use a subdomain')
+            ->assertSee('Use the main domain');
     }
 
-    public function test_authenticated_user_can_save_custom_domain(): void
+    public function test_authenticated_user_can_save_subdomain(): void
     {
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->post(route('branded-domains.store'), ['domain' => 'go.brand.test'])
+            ->post(route('branded-domains.store'), [
+                'base_domain' => 'brand.test',
+                'domain_type' => 'subdomain',
+                'subdomain_prefix' => 'go',
+            ])
             ->assertRedirect()
             ->assertSessionHas('domain_status');
 
         $this->assertDatabaseHas('custom_domains', [
             'user_id' => $user->id,
             'domain' => 'go.brand.test',
+            'domain_type' => 'subdomain',
+            'base_domain' => 'brand.test',
+            'subdomain_prefix' => 'go',
             'verified_at' => null,
             'is_default' => true,
+        ]);
+    }
+
+    public function test_authenticated_user_can_save_main_domain(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('branded-domains.store'), [
+                'base_domain' => 'brand.test',
+                'domain_type' => 'apex',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('domain_status');
+
+        $this->assertDatabaseHas('custom_domains', [
+            'user_id' => $user->id,
+            'domain' => 'brand.test',
+            'domain_type' => 'apex',
+            'base_domain' => 'brand.test',
+            'subdomain_prefix' => null,
         ]);
     }
 
@@ -58,15 +100,18 @@ class CustomDomainTest extends TestCase
     {
         $user = User::factory()->create();
 
-        CustomDomain::create([
+        $this->makeSubdomain([
             'user_id' => $user->id,
-            'domain' => 'go.brand.test',
             'verification_token' => 'token1',
             'is_default' => true,
         ]);
 
         $this->actingAs($user)
-            ->post(route('branded-domains.store'), ['domain' => 'links.brand.test'])
+            ->post(route('branded-domains.store'), [
+                'base_domain' => 'brand.test',
+                'domain_type' => 'subdomain',
+                'subdomain_prefix' => 'links',
+            ])
             ->assertRedirect();
 
         $this->assertDatabaseHas('custom_domains', [
@@ -82,14 +127,10 @@ class CustomDomainTest extends TestCase
             ->assertSee('links.brand.test');
     }
 
-    public function test_domain_details_page_shows_connection_steps(): void
+    public function test_subdomain_details_page_shows_cname_steps(): void
     {
         $user = User::factory()->create();
-        $domain = CustomDomain::create([
-            'user_id' => $user->id,
-            'domain' => 'go.brand.test',
-            'verification_token' => 'token123',
-        ]);
+        $domain = $this->makeSubdomain(['user_id' => $user->id]);
 
         config(['app.url' => 'http://127.0.0.1:8000']);
 
@@ -102,24 +143,71 @@ class CustomDomainTest extends TestCase
             ->assertSee("'go'");
     }
 
-    public function test_guest_cannot_manage_custom_domain(): void
+    public function test_main_domain_details_page_shows_cname_with_at_host(): void
     {
-        $this->post(route('branded-domains.store'), ['domain' => 'go.brand.test'])
-            ->assertRedirect(route('login'));
+        $user = User::factory()->create();
+        $domain = CustomDomain::create([
+            'user_id' => $user->id,
+            'domain' => 'brand.test',
+            'domain_type' => CustomDomain::TYPE_APEX,
+            'base_domain' => 'brand.test',
+            'subdomain_prefix' => null,
+            'verification_token' => 'token123',
+        ]);
+
+        config(['app.url' => 'http://127.0.0.1:8000']);
+
+        $this->actingAs($user)
+            ->get(route('branded-domains.show', $domain))
+            ->assertOk()
+            ->assertSee('DNS setup required for brand.test')
+            ->assertSee('127.0.0.1')
+            ->assertSee("'@'")
+            ->assertSee('CNAME');
     }
 
-    public function test_verify_marks_domain_as_verified_when_dns_matches(): void
+    public function test_guest_cannot_manage_custom_domain(): void
+    {
+        $this->post(route('branded-domains.store'), [
+            'base_domain' => 'brand.test',
+            'domain_type' => 'subdomain',
+            'subdomain_prefix' => 'go',
+        ])->assertRedirect(route('login'));
+    }
+
+    public function test_verify_marks_subdomain_as_verified_when_cname_matches(): void
+    {
+        config(['app.url' => 'http://127.0.0.1:8000']);
+
+        $user = User::factory()->create();
+        $customDomain = $this->makeSubdomain(['user_id' => $user->id]);
+
+        $this->mockVerifiedSubdomainDns('go.brand.test', '127.0.0.1');
+
+        $this->actingAs($user)
+            ->post(route('branded-domains.verify', $customDomain))
+            ->assertRedirect(route('branded-domains.show', $customDomain))
+            ->assertSessionHas('domain_status');
+
+        $customDomain->refresh();
+        $this->assertNotNull($customDomain->verified_at);
+    }
+
+    public function test_verify_marks_main_domain_as_verified_when_cname_matches(): void
     {
         config(['app.url' => 'http://127.0.0.1:8000']);
 
         $user = User::factory()->create();
         $customDomain = CustomDomain::create([
             'user_id' => $user->id,
-            'domain' => 'go.brand.test',
+            'domain' => 'brand.test',
+            'domain_type' => CustomDomain::TYPE_APEX,
+            'base_domain' => 'brand.test',
+            'subdomain_prefix' => null,
             'verification_token' => 'token123',
         ]);
 
-        $this->mockVerifiedDns('go.brand.test', '127.0.0.1');
+        $this->mockVerifiedSubdomainDns('brand.test', '127.0.0.1');
 
         $this->actingAs($user)
             ->post(route('branded-domains.verify', $customDomain))
@@ -138,6 +226,9 @@ class CustomDomainTest extends TestCase
         $branded = CustomDomain::create([
             'user_id' => $user->id,
             'domain' => 'links.brand.test',
+            'domain_type' => CustomDomain::TYPE_SUBDOMAIN,
+            'base_domain' => 'brand.test',
+            'subdomain_prefix' => 'links',
             'verification_token' => 'token456',
             'verified_at' => now(),
             'is_default' => true,
@@ -183,10 +274,8 @@ class CustomDomainTest extends TestCase
         $owner = User::factory()->create();
         $other = User::factory()->create();
 
-        $branded = CustomDomain::create([
+        $branded = $this->makeSubdomain([
             'user_id' => $owner->id,
-            'domain' => 'go.brand.test',
-            'verification_token' => 'token123',
             'verified_at' => now(),
         ]);
 
@@ -217,9 +306,8 @@ class CustomDomainTest extends TestCase
     public function test_user_can_set_verified_domain_as_default(): void
     {
         $user = User::factory()->create();
-        $primary = CustomDomain::create([
+        $primary = $this->makeSubdomain([
             'user_id' => $user->id,
-            'domain' => 'go.brand.test',
             'verification_token' => 'token1',
             'verified_at' => now(),
             'is_default' => true,
@@ -227,6 +315,9 @@ class CustomDomainTest extends TestCase
         $secondary = CustomDomain::create([
             'user_id' => $user->id,
             'domain' => 'links.brand.test',
+            'domain_type' => CustomDomain::TYPE_SUBDOMAIN,
+            'base_domain' => 'brand.test',
+            'subdomain_prefix' => 'links',
             'verification_token' => 'token2',
             'verified_at' => now(),
             'is_default' => false,
@@ -246,10 +337,8 @@ class CustomDomainTest extends TestCase
     public function test_user_can_remove_custom_domain(): void
     {
         $user = User::factory()->create();
-        $customDomain = CustomDomain::create([
+        $customDomain = $this->makeSubdomain([
             'user_id' => $user->id,
-            'domain' => 'go.brand.test',
-            'verification_token' => 'token123',
             'verified_at' => now(),
         ]);
 
@@ -270,7 +359,10 @@ class CustomDomainTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->post(route('branded-domains.store'), ['domain' => '127.0.0.1'])
+            ->post(route('branded-domains.store'), [
+                'base_domain' => '127.0.0.1',
+                'domain_type' => 'apex',
+            ])
             ->assertSessionHasErrors('domain');
     }
 
@@ -278,11 +370,7 @@ class CustomDomainTest extends TestCase
     {
         $owner = User::factory()->create();
         $other = User::factory()->create();
-        $domain = CustomDomain::create([
-            'user_id' => $owner->id,
-            'domain' => 'go.brand.test',
-            'verification_token' => 'token123',
-        ]);
+        $domain = $this->makeSubdomain(['user_id' => $owner->id]);
 
         $this->actingAs($other)
             ->get(route('branded-domains.show', $domain))

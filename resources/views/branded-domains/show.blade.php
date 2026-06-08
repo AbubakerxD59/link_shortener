@@ -7,6 +7,11 @@
 @endpush
 
 @section('content')
+@php
+    $copyLines = collect($domainSetup['dns_records'])
+        ->map(fn ($record) => 'TYPE: '.$record['type']."\n".'NAME: '.$record['name']."\n".'VALUE: '.$record['value'])
+        ->implode("\n\n");
+@endphp
 <section class="branded-domains-page">
     <div class="container">
         <a href="{{ route('branded-domains.index') }}" class="back-link" aria-label="Back to branded domains">
@@ -54,7 +59,7 @@
                 <button
                     type="button"
                     class="btn btn-outline"
-                    data-copy-text="TYPE: CNAME&#10;NAME: {{ $domainSetup['cname_name'] }}&#10;VALUE: {{ $domainSetup['cname_target'] }}"
+                    data-copy-text="{{ e($copyLines) }}"
                 >Copy</button>
 
                 @unless ($customDomain->isVerified())

@@ -28,42 +28,52 @@ class CustomDomainService
         return $this->cnameTarget();
     }
 
-    public function cnameName(string $domain): string
+    public function dnsRecordName(CustomDomain $customDomain): string
     {
-        $domain = CustomDomain::normalizeHost($domain);
-        $dot = strpos($domain, '.');
+        if ($customDomain->isApex()) {
+            return '@';
+        }
 
-        return $dot === false ? $domain : substr($domain, 0, $dot);
+        return $customDomain->subdomain_prefix ?? $this->subdomainPrefixFromDomain($customDomain->domain);
+    }
+
+    /**
+     * @return list<array{type: string, name: string, value: string}>
+     */
+    public function dnsRecords(CustomDomain $customDomain): array
+    {
+        return [[
+            'type' => 'CNAME',
+            'name' => $this->dnsRecordName($customDomain),
+            'value' => $this->cnameTarget(),
+        ]];
     }
 
     /**
      * @return array{
      *     verified: bool,
-     *     cname_ok: bool,
-     *     cname_name: string,
-     *     cname_target: string,
+     *     dns_ok: bool,
+     *     dns_records: list<array{type: string, name: string, value: string}>,
      *     message: string
      * }
      */
     public function verify(CustomDomain $customDomain): array
     {
-        $cnameTarget = $this->cnameTarget();
-        $cnameOk = $this->domainRoutesToApp($customDomain->domain, $cnameTarget);
+        $dnsOk = $this->subdomainRoutesToApp($customDomain->domain);
 
-        if ($cnameOk) {
+        if ($dnsOk) {
             $customDomain->update(['verified_at' => now()]);
         }
 
         return [
-            'verified' => $cnameOk,
-            'cname_ok' => $cnameOk,
-            'cname_name' => $this->cnameName($customDomain->domain),
-            'cname_target' => $cnameTarget,
-            'message' => $this->verificationMessage($cnameOk),
+            'verified' => $dnsOk,
+            'dns_ok' => $dnsOk,
+            'dns_records' => $this->dnsRecords($customDomain),
+            'message' => $this->verificationMessage($dnsOk, $customDomain),
         ];
     }
 
-    public function domainRoutesToApp(string $domain, ?string $cnameTarget = null): bool
+    public function subdomainRoutesToApp(string $domain, ?string $cnameTarget = null): bool
     {
         $cnameTarget = $cnameTarget ?? $this->cnameTarget();
         $domain = CustomDomain::normalizeHost($domain);
@@ -162,29 +172,49 @@ class CustomDomainService
      */
     public function setupInstructions(CustomDomain $customDomain): array
     {
-        $cnameTarget = $this->cnameTarget();
-        $cnameName = $this->cnameName($customDomain->domain);
+        $dnsRecords = $this->dnsRecords($customDomain);
         $exampleShortUrl = rtrim(config('custom_domains.scheme', 'https').'://'.$customDomain->domain, '/').'/s/abc123';
 
         return [
             'domain' => $customDomain->domain,
+            'domain_type' => $customDomain->domain_type,
+            'base_domain' => $customDomain->base_domain,
             'verified' => $customDomain->isVerified(),
-            'cname_target' => $cnameTarget,
-            'cname_name' => $cnameName,
+            'dns_records' => $dnsRecords,
             'example_short_url' => $exampleShortUrl,
         ];
     }
 
-    public function assignDomain(User $user, string $domain): CustomDomain
-    {
-        $domain = CustomDomain::normalizeHost($domain);
+    public function assignDomain(
+        User $user,
+        string $baseDomain,
+        string $domainType,
+        ?string $subdomainPrefix = null
+    ): CustomDomain {
+        $baseDomain = CustomDomain::normalizeHost($baseDomain);
+        $domainType = $domainType === CustomDomain::TYPE_APEX
+            ? CustomDomain::TYPE_APEX
+            : CustomDomain::TYPE_SUBDOMAIN;
+
+        if (! $this->isValidBaseDomain($baseDomain)) {
+            throw new \InvalidArgumentException('Enter a valid domain name (e.g. yourbrand.com).');
+        }
+
+        if ($domainType === CustomDomain::TYPE_SUBDOMAIN) {
+            $subdomainPrefix = strtolower(trim((string) $subdomainPrefix));
+
+            if (! $this->isValidSubdomainPrefix($subdomainPrefix)) {
+                throw new \InvalidArgumentException('Enter a valid subdomain label (e.g. go, links, or shrtlnk).');
+            }
+
+            $domain = $subdomainPrefix.'.'.$baseDomain;
+        } else {
+            $domain = $baseDomain;
+            $subdomainPrefix = null;
+        }
 
         if ($this->isReservedHost($domain)) {
             throw new \InvalidArgumentException('Enter a custom hostname, not this app\'s default domain or an IP address.');
-        }
-
-        if (! $this->isValidHostname($domain)) {
-            throw new \InvalidArgumentException('Enter a valid domain name (e.g. go.yourbrand.com).');
         }
 
         if (CustomDomain::query()->where('domain', $domain)->exists()) {
@@ -201,6 +231,9 @@ class CustomDomainService
         return CustomDomain::query()->create([
             'user_id' => $user->id,
             'domain' => $domain,
+            'domain_type' => $domainType,
+            'base_domain' => $baseDomain,
+            'subdomain_prefix' => $subdomainPrefix,
             'verification_token' => CustomDomain::generateVerificationToken(),
             'verified_at' => null,
             'is_default' => $isFirst,
@@ -242,6 +275,14 @@ class CustomDomainService
         }
     }
 
+    protected function subdomainPrefixFromDomain(string $domain): string
+    {
+        $domain = CustomDomain::normalizeHost($domain);
+        $dot = strpos($domain, '.');
+
+        return $dot === false ? $domain : substr($domain, 0, $dot);
+    }
+
     protected function hostnamesMatch(string $left, string $right): bool
     {
         $left = CustomDomain::normalizeHost($left);
@@ -250,7 +291,7 @@ class CustomDomainService
         return $left === $right;
     }
 
-    protected function isValidHostname(string $host): bool
+    protected function isValidBaseDomain(string $host): bool
     {
         return (bool) preg_match(
             '/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i',
@@ -258,9 +299,14 @@ class CustomDomainService
         );
     }
 
-    protected function verificationMessage(bool $cnameOk): string
+    protected function isValidSubdomainPrefix(string $prefix): bool
     {
-        if ($cnameOk) {
+        return (bool) preg_match('/^(?=.{1,63}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i', $prefix);
+    }
+
+    protected function verificationMessage(bool $dnsOk, CustomDomain $customDomain): string
+    {
+        if ($dnsOk) {
             return 'Domain verified. Your short links will now use your branded domain.';
         }
 

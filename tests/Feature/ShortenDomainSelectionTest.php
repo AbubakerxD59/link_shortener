@@ -20,12 +20,18 @@ class ShortenDomainSelectionTest extends TestCase
         CustomDomain::create([
             'user_id' => $user->id,
             'domain' => 'go.brand.test',
+            'domain_type' => CustomDomain::TYPE_SUBDOMAIN,
+            'base_domain' => 'brand.test',
+            'subdomain_prefix' => 'go',
             'verification_token' => 'token123',
             'verified_at' => now(),
         ]);
         CustomDomain::create([
             'user_id' => $user->id,
             'domain' => 'links.brand.test',
+            'domain_type' => CustomDomain::TYPE_SUBDOMAIN,
+            'base_domain' => 'brand.test',
+            'subdomain_prefix' => 'links',
             'verification_token' => 'token456',
             'verified_at' => null,
         ]);
@@ -47,6 +53,9 @@ class ShortenDomainSelectionTest extends TestCase
         $pending = CustomDomain::create([
             'user_id' => $user->id,
             'domain' => 'pending.brand.test',
+            'domain_type' => CustomDomain::TYPE_SUBDOMAIN,
+            'base_domain' => 'brand.test',
+            'subdomain_prefix' => 'pending',
             'verification_token' => 'token123',
         ]);
 
