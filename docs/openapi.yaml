@@ -196,7 +196,7 @@ paths:
                   - $ref: '#/components/schemas/ValidationError'
                   - $ref: '#/components/schemas/BusinessError'
 
-  /s/{code}:
+  /{code}:
     get:
       summary: Open short link (bridge page)
       description: Returns HTML bridge page. Not JSON.

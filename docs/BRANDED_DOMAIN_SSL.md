@@ -6,7 +6,7 @@ Some hosted short-link services issue SSL for customer domains automatically. Wi
 
 ## Why you see `ERR_SSL_PROTOCOL_ERROR`
 
-Your app generates branded short URLs with `https://` (see `CUSTOM_DOMAIN_SCHEME`). When a visitor opens `https://shrtlnk.customer.com/s/abc123`:
+Your app generates branded short URLs with `https://` (see `CUSTOM_DOMAIN_SCHEME`). When a visitor opens `https://shrtlnk.customer.com/abc123`:
 
 1. DNS resolves `shrtlnk.customer.com` → your `CUSTOM_DOMAIN_CNAME_TARGET`
 2. The browser connects on port **443** and expects TLS for **`shrtlnk.customer.com`**
@@ -38,7 +38,7 @@ Install a TLS certificate for each customer hostname on your web server. This do
 ## Testing
 
 ```bash
-curl -I https://shrtlnk.customer.com/s/testcode
+curl -I https://shrtlnk.customer.com/testcode
 ```
 
 A working setup returns `HTTP/2 302` or `404` (not a TLS error).

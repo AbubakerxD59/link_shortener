@@ -38,7 +38,7 @@ Source files: `docs/API.md`, `docs/openapi.yaml`, `resources/views/docs/api.blad
 | `GET` | `/api/links/{code}` | Get link details including `clicks` |
 | `PATCH` / `PUT` | `/api/links/{code}` | Update an existing short link |
 | `POST` | `/shorten` | Public shorten endpoint used by the web UI (CSRF required for browser) |
-| `GET` | `/s/{code}` | Open a short link (bridge cloaking page, then destination) |
+| `GET` | `/{code}` | Open a short link (bridge cloaking page, then destination) |
 
 Use **`url_cloak`** to control behavior: `1` shows a bridge page (preview + Continue); `0` redirects directly to the destination.
 
@@ -122,7 +122,7 @@ curl -X POST "{APP_URL}/api/links" \
 {
   "success": true,
   "id": 15,
-  "short_url": "https://short.example.com/s/a1B2c3",
+  "short_url": "https://short.example.com/a1B2c3",
   "short_code": "a1B2c3",
   "original_url": "https://example.com/blog/post",
   "redirect_mode": "bridge",
@@ -142,7 +142,7 @@ curl -X POST "{APP_URL}/api/links" \
 | `success` | Always `true` on success |
 | `id` | Database primary key |
 | `short_url` | Full shareable URL |
-| `short_code` | Path segment used in `/s/{code}` |
+| `short_code` | Path segment used in `/{code}` |
 | `original_url` | Normalized destination URL |
 | `redirect_mode` | Always `bridge` |
 | `page_title` | Title shown on bridge page |
@@ -209,7 +209,7 @@ curl -X GET "{APP_URL}/api/links/abc123" \
 {
   "success": true,
   "id": 15,
-  "short_url": "https://short.example.com/s/abc123",
+  "short_url": "https://short.example.com/abc123",
   "short_code": "abc123",
   "original_url": "https://example.com/blog/post",
   "redirect_mode": "bridge",
@@ -341,7 +341,7 @@ Not a JSON API; documented for integrators testing end-to-end flow.
 ### Request
 
 ```
-GET /s/{code}
+GET /{code}
 ```
 
 - `{code}` — alphanumeric short code (e.g. `a1B2c3`)
@@ -447,6 +447,6 @@ GET    /api/links/{code}    Get link details and clicks
 PATCH  /api/links/{code}    Update short link
 PUT    /api/links/{code}    Update short link (same as PATCH)
 POST   /shorten             Create short link (web UI, CSRF)
-GET    /s/{code}            Bridge page → user clicks Continue
+GET    /{code}              Bridge page → user clicks Continue
 GET    /up                  Application health
 ```

@@ -253,7 +253,7 @@ class CustomDomainTest extends TestCase
         $shortLink->load('customDomain');
         $details = app(UrlShortenerService::class)->linkDetails($shortLink);
 
-        $this->assertSame('https://links.brand.test/s/abc123', $details['short_url']);
+        $this->assertSame('https://links.brand.test/abc123', $details['short_url']);
         $this->assertSame('links.brand.test', $details['link_domain']);
     }
 
@@ -272,7 +272,7 @@ class CustomDomainTest extends TestCase
 
         $details = app(UrlShortenerService::class)->linkDetails($shortLink);
 
-        $this->assertSame('http://127.0.0.1:8000/s/abc123', $details['short_url']);
+        $this->assertSame('http://127.0.0.1:8000/abc123', $details['short_url']);
         $this->assertSame('127.0.0.1', $details['link_domain']);
     }
 
@@ -303,10 +303,10 @@ class CustomDomainTest extends TestCase
             'source' => ShortLink::SOURCE_WEB,
         ]);
 
-        $this->get('http://go.brand.test/s/'.$ownerLink->short_code)
+        $this->get('http://go.brand.test/'.$ownerLink->short_code)
             ->assertRedirect('https://example.com/owner');
 
-        $this->get('http://go.brand.test/s/other1')
+        $this->get('http://go.brand.test/other1')
             ->assertNotFound();
     }
 

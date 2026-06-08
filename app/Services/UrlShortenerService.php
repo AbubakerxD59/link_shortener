@@ -31,7 +31,7 @@ class UrlShortenerService
 
         $parsed = parse_url($normalizedUrl);
         $path = $parsed['path'] ?? '';
-        if (preg_match('#^/s/[a-zA-Z0-9]+$#', $path)) {
+        if (preg_match('#^/[a-zA-Z0-9]+$#', $path)) {
             return [
                 'success' => true,
                 'short_url' => $normalizedUrl,

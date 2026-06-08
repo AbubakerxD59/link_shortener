@@ -37,6 +37,6 @@ Route::get('/api-docs/openapi.yaml', [DocumentationController::class, 'openapi']
 
 Route::post('/shorten', [ShortenController::class, 'store'])->name('shorten');
 
-Route::get('/s/{code}', ShortLinkRedirectController::class)
+Route::get('/{code}', ShortLinkRedirectController::class)
     ->name('short.redirect')
     ->where('code', '[a-zA-Z0-9]+');

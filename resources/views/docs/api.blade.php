@@ -373,7 +373,7 @@
                             </tr>
                             <tr>
                                 <td><span class="method method-get">GET</span></td>
-                                <td><code>/s/{code}</code></td>
+                                <td><code>/{code}</code></td>
                                 <td>Bridge cloaking page, then destination</td>
                             </tr>
                         </tbody>
@@ -488,7 +488,7 @@
                             'code' => '{
   "success": true,
   "id": 15,
-  "short_url": "' . $appUrl . '/s/a1B2c3",
+  "short_url": "' . $appUrl . '/a1B2c3",
   "short_code": "a1B2c3",
   "original_url": "https://example.com/blog/post",
   "redirect_mode": "bridge",
@@ -550,7 +550,7 @@
                             'code' => '{
   "success": true,
   "id": 15,
-  "short_url": "' . $appUrl . '/s/abc123",
+  "short_url": "' . $appUrl . '/abc123",
   "short_code": "abc123",
   "original_url": "https://example.com/blog/post",
   "redirect_mode": "bridge",
@@ -698,7 +698,7 @@
                 <div class="endpoint-card">
                     <div class="endpoint-header">
                         <span class="method method-get">GET</span>
-                        <span class="endpoint-path">/s/{code}</span>
+                        <span class="endpoint-path">/{code}</span>
                     </div>
                     <div class="endpoint-body">
                         <p>Returns HTML bridge page (not JSON). Increments <code>clicks</code> by 1. <code>{code}</code> is alphanumeric.</p>
@@ -721,7 +721,7 @@
                             <tr><td><code>success</code></td><td><code>true</code> on success</td></tr>
                             <tr><td><code>id</code></td><td>Database ID</td></tr>
                             <tr><td><code>short_url</code></td><td>Full shareable URL</td></tr>
-                            <tr><td><code>short_code</code></td><td>Code used in <code>/s/{code}</code></td></tr>
+                            <tr><td><code>short_code</code></td><td>Code used in <code>/{code}</code></td></tr>
                             <tr><td><code>original_url</code></td><td>Normalized destination</td></tr>
                             <tr><td><code>redirect_mode</code></td><td><code>bridge</code> or <code>direct</code></td></tr>
                             <tr><td><code>url_cloak</code></td><td><code>1</code> (bridge) or <code>0</code> (direct)</td></tr>

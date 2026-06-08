@@ -107,10 +107,10 @@ class CustomDomainService
         if ($customDomain?->isVerified()) {
             $scheme = config('custom_domains.scheme', 'https');
 
-            return rtrim($scheme.'://'.$customDomain->domain, '/').'/s/'.$shortCode;
+            return rtrim($scheme.'://'.$customDomain->domain, '/').'/'.$shortCode;
         }
 
-        return rtrim(config('app.url'), '/').'/s/'.$shortCode;
+        return rtrim(config('app.url'), '/').'/'.$shortCode;
     }
 
     public function buildShortUrlForLink(ShortLink $shortLink): string
@@ -188,7 +188,7 @@ class CustomDomainService
     public function setupInstructions(CustomDomain $customDomain): array
     {
         $dnsRecords = $this->dnsRecords($customDomain);
-        $exampleShortUrl = rtrim(config('custom_domains.scheme', 'https').'://'.$customDomain->domain, '/').'/s/abc123';
+        $exampleShortUrl = rtrim(config('custom_domains.scheme', 'https').'://'.$customDomain->domain, '/').'/abc123';
 
         $verified = $customDomain->isVerified();
         $sslOk = $verified ? $this->domainHasWorkingHttps($customDomain->domain) : false;

@@ -38,7 +38,7 @@ See [docs/API.md](docs/API.md) for full details.
 |-------|-------------|
 | `GET /` | Shortener homepage |
 | `POST /shorten` | JSON shorten (CSRF required from browser) |
-| `GET /s/{code}` | Bridge page → Continue to destination |
+| `GET /{code}` | Bridge page → Continue to destination |
 
 ## Environment
 

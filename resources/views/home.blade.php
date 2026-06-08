@@ -548,7 +548,7 @@
                 <div class="feature-card">
                     <div class="feature-icon">🔗</div>
                     <h3>Short, clean links</h3>
-                    <p>Compact URLs you can drop anywhere — e.g. {{ parse_url(config('app.url'), PHP_URL_HOST) }}/s/abc123</p>
+                    <p>Compact URLs you can drop anywhere — e.g. {{ parse_url(config('app.url'), PHP_URL_HOST) }}/abc123</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🛡️</div>
