@@ -1,5 +1,7 @@
 @php
     $primaryRecord = $domainSetup['dns_records'][0] ?? null;
+    $sslOk = $domainSetup['ssl_ok'] ?? false;
+    $verified = $domainSetup['verified'] ?? false;
 @endphp
 
 <div class="domain-setup">
@@ -38,6 +40,22 @@
                 </div>
             </div>
         </article>
+
+        <article class="plain-step">
+            <div class="plain-step-head">
+                <span class="setup-step-num">3</span>
+                <div>
+                    <p><strong>Enable HTTPS</strong> so <code>https://{{ $domainSetup['domain'] }}</code> opens without a security error.</p>
+                    <p class="record-tip" style="margin-top: 0.75rem;">
+                        Short.io issues SSL certificates automatically. For this app, choose one option:
+                    </p>
+                    <ul class="ssl-options-list">
+                        <li><strong>Cloudflare (recommended):</strong> If {{ $domainSetup['base_domain'] }} uses Cloudflare DNS, turn on the <strong>orange cloud proxy</strong> for the CNAME record above. Cloudflare provides free SSL for <code>{{ $domainSetup['domain'] }}</code>.</li>
+                        <li><strong>Manual certificate:</strong> Issue a TLS certificate for <code>{{ $domainSetup['domain'] }}</code> on the web server that receives traffic for <code>{{ $domainSetup['cname_target'] }}</code>.</li>
+                    </ul>
+                </div>
+            </div>
+        </article>
     </div>
 
     <p class="dns-table-label">So you will see a new record:</p>
@@ -65,15 +83,20 @@
 
     <p class="setup-time-note">
         DNS changes can take up to a few hours to propagate.
-        @unless ($domainSetup['verified'])
-            Click <strong>Refresh</strong> below once the record is live.
-        @endunless
+        @if (! $verified || ! $sslOk)
+            Click <strong>Refresh</strong> below after DNS and HTTPS are configured.
+        @endif
     </p>
 
-    @if ($domainSetup['verified'])
+    @if ($verified && $sslOk)
         <div class="domain-note domain-note-success">
             <strong>Your links will look like this:</strong>
             <code>{{ $domainSetup['example_short_url'] }}</code>
+        </div>
+    @elseif ($verified)
+        <div class="domain-note domain-note-warning">
+            <strong>DNS verified — waiting on HTTPS</strong>
+            <p>Short links will use <code>{{ $domainSetup['example_short_url'] }}</code>, but visitors will see a browser error until step 3 is complete.</p>
         </div>
     @endif
 </div>

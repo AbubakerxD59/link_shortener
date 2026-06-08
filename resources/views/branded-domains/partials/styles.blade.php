@@ -108,6 +108,39 @@
         color: var(--danger);
     }
 
+    .domain-alert-warning {
+        background: #fffbeb;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        color: #92400e;
+    }
+
+    .domain-alert-warning p {
+        margin: 0.5rem 0 0;
+        line-height: 1.6;
+    }
+
+    .domain-note-warning {
+        background: #fffbeb;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .domain-note-warning p {
+        margin: 0.5rem 0 0;
+        color: #92400e;
+    }
+
+    .ssl-options-list {
+        margin: 0.75rem 0 0;
+        padding-left: 1.25rem;
+        color: var(--muted);
+        font-size: 0.875rem;
+        line-height: 1.6;
+    }
+
+    .ssl-options-list li + li {
+        margin-top: 0.625rem;
+    }
+
     .domain-label {
         display: block;
         font-size: 0.875rem;

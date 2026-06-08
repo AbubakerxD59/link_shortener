@@ -8,7 +8,10 @@ use App\Models\User;
 
 class CustomDomainService
 {
-    public function __construct(protected DnsLookup $dnsLookup) {}
+    public function __construct(
+        protected DnsLookup $dnsLookup,
+        protected SslProbe $sslProbe,
+    ) {}
 
     public function cnameTarget(): string
     {
@@ -53,6 +56,7 @@ class CustomDomainService
      * @return array{
      *     verified: bool,
      *     dns_ok: bool,
+     *     ssl_ok: bool,
      *     dns_records: list<array{type: string, name: string, value: string}>,
      *     message: string
      * }
@@ -60,6 +64,7 @@ class CustomDomainService
     public function verify(CustomDomain $customDomain): array
     {
         $dnsOk = $this->subdomainRoutesToApp($customDomain->domain);
+        $sslOk = $dnsOk && $this->domainHasWorkingHttps($customDomain->domain);
 
         if ($dnsOk) {
             $customDomain->update(['verified_at' => now()]);
@@ -68,9 +73,19 @@ class CustomDomainService
         return [
             'verified' => $dnsOk,
             'dns_ok' => $dnsOk,
+            'ssl_ok' => $sslOk,
             'dns_records' => $this->dnsRecords($customDomain),
-            'message' => $this->verificationMessage($dnsOk, $customDomain),
+            'message' => $this->verificationMessage($dnsOk, $sslOk),
         ];
+    }
+
+    public function domainHasWorkingHttps(string $domain): bool
+    {
+        if (config('custom_domains.scheme', 'https') !== 'https') {
+            return true;
+        }
+
+        return $this->sslProbe->domainHasWorkingHttps(CustomDomain::normalizeHost($domain));
     }
 
     public function subdomainRoutesToApp(string $domain, ?string $cnameTarget = null): bool
@@ -175,13 +190,18 @@ class CustomDomainService
         $dnsRecords = $this->dnsRecords($customDomain);
         $exampleShortUrl = rtrim(config('custom_domains.scheme', 'https').'://'.$customDomain->domain, '/').'/s/abc123';
 
+        $verified = $customDomain->isVerified();
+        $sslOk = $verified ? $this->domainHasWorkingHttps($customDomain->domain) : false;
+
         return [
             'domain' => $customDomain->domain,
             'domain_type' => $customDomain->domain_type,
             'base_domain' => $customDomain->base_domain,
-            'verified' => $customDomain->isVerified(),
+            'verified' => $verified,
+            'ssl_ok' => $sslOk,
             'dns_records' => $dnsRecords,
             'example_short_url' => $exampleShortUrl,
+            'cname_target' => $this->cnameTarget(),
         ];
     }
 
@@ -304,10 +324,14 @@ class CustomDomainService
         return (bool) preg_match('/^(?=.{1,63}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i', $prefix);
     }
 
-    protected function verificationMessage(bool $dnsOk, CustomDomain $customDomain): string
+    protected function verificationMessage(bool $dnsOk, bool $sslOk): string
     {
+        if ($dnsOk && $sslOk) {
+            return 'Domain verified. Your short links are ready to use.';
+        }
+
         if ($dnsOk) {
-            return 'Domain verified. Your short links will now use your branded domain.';
+            return 'DNS verified. HTTPS is not working yet — configure SSL for this domain before sharing links.';
         }
 
         return 'DNS record not detected yet. Add the CNAME record below, wait for propagation, then refresh.';

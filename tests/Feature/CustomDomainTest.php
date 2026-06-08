@@ -6,6 +6,7 @@ use App\Models\CustomDomain;
 use App\Models\ShortLink;
 use App\Models\User;
 use App\Services\DnsLookup;
+use App\Services\SslProbe;
 use App\Services\UrlShortenerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
@@ -15,14 +16,20 @@ class CustomDomainTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function mockVerifiedSubdomainDns(string $domain, string $cnameTarget = '127.0.0.1'): void
+    protected function mockVerifiedSubdomainDns(string $domain, string $cnameTarget = '127.0.0.1', bool $sslOk = true): void
     {
         $dns = Mockery::mock(DnsLookup::class);
         $dns->shouldReceive('cnameTargets')
             ->with($domain)
             ->andReturn([$cnameTarget]);
 
+        $ssl = Mockery::mock(SslProbe::class);
+        $ssl->shouldReceive('domainHasWorkingHttps')
+            ->with($domain)
+            ->andReturn($sslOk);
+
         $this->instance(DnsLookup::class, $dns);
+        $this->instance(SslProbe::class, $ssl);
     }
 
 

@@ -48,6 +48,17 @@
             <div class="domain-alert domain-alert-error">{{ session('domain_error') }}</div>
         @endif
 
+        @if (session('domain_warning'))
+            <div class="domain-alert domain-alert-warning">{{ session('domain_warning') }}</div>
+        @endif
+
+        @if ($customDomain->isVerified() && ! ($domainSetup['ssl_ok'] ?? true))
+            <div class="domain-alert domain-alert-warning">
+                <strong>HTTPS is not working for {{ $customDomain->domain }}</strong>
+                <p>DNS is correct, but browsers cannot open <code>https://{{ $customDomain->domain }}</code> yet. This is why you may see <em>ERR_SSL_PROTOCOL_ERROR</em>. Short.io handles this automatically; on your server you must enable SSL for each verified branded domain.</p>
+            </div>
+        @endif
+
         @error('domain')
             <div class="domain-alert domain-alert-error">{{ $message }}</div>
         @enderror
@@ -62,12 +73,12 @@
                     data-copy-text="{{ e($copyLines) }}"
                 >Copy</button>
 
-                @unless ($customDomain->isVerified())
+                @if (! $customDomain->isVerified() || ! ($domainSetup['ssl_ok'] ?? true))
                     <form method="POST" action="{{ route('branded-domains.verify', $customDomain) }}">
                         @csrf
                         <button type="submit" class="btn btn-primary">Refresh</button>
                     </form>
-                @endunless
+                @endif
 
                 @if ($customDomain->isVerified() && ! $customDomain->is_default)
                     <form method="POST" action="{{ route('branded-domains.default', $customDomain) }}">

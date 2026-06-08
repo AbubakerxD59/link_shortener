@@ -92,17 +92,17 @@ class CustomDomainController extends Controller
                 'message' => $result['message'],
                 'checks' => [
                     'dns_ok' => $result['dns_ok'],
+                    'ssl_ok' => $result['ssl_ok'],
                 ],
                 'domain' => $this->customDomains->setupInstructions($customDomain),
             ], $result['verified'] ? 200 : 422);
         }
 
+        $flashKey = ! $result['dns_ok'] ? 'domain_error' : ($result['ssl_ok'] ? 'domain_status' : 'domain_warning');
+
         return redirect()
             ->route('branded-domains.show', $customDomain)
-            ->with(
-                $result['verified'] ? 'domain_status' : 'domain_error',
-                $result['message']
-            );
+            ->with($flashKey, $result['message']);
     }
 
     public function makeDefault(Request $request, CustomDomain $customDomain): RedirectResponse
