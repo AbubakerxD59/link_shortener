@@ -1,7 +1,9 @@
 <tr data-link-id="{{ $link['id'] }}" data-short-code="{{ $link['short_code'] }}">
     <td class="short-url-cell">
         <div class="short-url-row">
-            <span class="short-url-code">{{ $link['short_code'] }}</span>
+            <a href="{{ $link['short_url'] }}" target="_blank" rel="noopener noreferrer" class="short-url-link">
+                {{ $link['short_url'] }}
+            </a>
             <button type="button" class="copy-btn" data-copy-url="{{ $link['short_url'] }}" aria-label="Copy short link" title="Copy link">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <rect x="9" y="9" width="13" height="13" rx="2"/>
@@ -9,7 +11,6 @@
                 </svg>
             </button>
         </div>
-        <p class="short-url-full">{{ $link['short_url'] }}</p>
     </td>
     <td>
         <span class="clicks-count">{{ $link['clicks'] }}</span>

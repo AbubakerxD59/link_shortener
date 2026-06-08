@@ -243,18 +243,18 @@
             flex-wrap: wrap;
         }
 
-        .short-url-code {
+        .short-url-link {
             font-family: ui-monospace, 'Cascadia Code', monospace;
             font-size: 0.8125rem;
             color: var(--accent);
             font-weight: 600;
+            word-break: break-all;
+            text-decoration: none;
+            line-height: 1.45;
         }
 
-        .short-url-full {
-            font-size: 0.75rem;
-            color: var(--muted);
-            word-break: break-all;
-            margin: 0.25rem 0 0;
+        .short-url-link:hover {
+            text-decoration: underline;
         }
 
         .copy-btn {
@@ -550,12 +550,12 @@
                 return '<tr data-link-id="' + escapeHtml(String(link.id)) + '" data-short-code="' + escapeHtml(link
                         .short_code) + '">' +
                     '<td class="short-url-cell"><div class="short-url-row">' +
-                    '<span class="short-url-code">' + escapeHtml(link.short_code) + '</span>' +
+                    '<a href="' + escapeHtml(link.short_url) + '" target="_blank" rel="noopener noreferrer" class="short-url-link">' +
+                    escapeHtml(link.short_url) + '</a>' +
                     '<button type="button" class="copy-btn" data-copy-url="' + escapeHtml(link.short_url) +
                     '" aria-label="Copy short link" title="Copy link">' +
                     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
-                    '</button></div>' +
-                    '<p class="short-url-full">' + escapeHtml(link.short_url) + '</p></td>' +
+                    '</button></div></td>' +
                     '<td><span class="clicks-count">' + escapeHtml(String(link.clicks || 0)) + '</span></td>' +
                     '<td>' + cloakBadge + '</td>' +
                     '<td><span class="badge badge-source">' + escapeHtml(link.source || 'web') + '</span></td>' +
