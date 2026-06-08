@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ShortLink;
 use App\Services\CustomDomainService;
 use App\Services\UrlShortenerService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -32,6 +33,20 @@ class DashboardController extends Controller
         return view('dashboard', [
             'links' => $links,
             'domainOptions' => $this->customDomains->shortenDomainOptions($user),
+        ]);
+    }
+
+    public function destroy(Request $request, ShortLink $shortLink): JsonResponse
+    {
+        if ($shortLink->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $shortLink->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Link deleted.',
         ]);
     }
 }

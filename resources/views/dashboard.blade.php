@@ -283,6 +283,37 @@
             height: 14px;
         }
 
+        .link-actions-cell {
+            width: 48px;
+            text-align: center;
+        }
+
+        .delete-link-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border: 1px solid var(--line-strong);
+            border-radius: 8px;
+            background: var(--card);
+            color: var(--muted);
+            cursor: pointer;
+            transition: color 0.2s, background 0.2s, border-color 0.2s;
+        }
+
+        .delete-link-btn:hover {
+            color: var(--danger);
+            border-color: rgba(220, 38, 38, 0.25);
+            background: #fef2f2;
+        }
+
+        .delete-link-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
         .badge {
             display: inline-flex;
             align-items: center;
@@ -470,6 +501,7 @@
                                     <th>Clicks</th>
                                     <th>Cloaking</th>
                                     <th>Source</th>
+                                    <th aria-label="Actions"></th>
                                 </tr>
                             </thead>
                             <tbody id="links-tbody">
@@ -507,6 +539,7 @@
     <script>
         (function() {
             var shortenUrl = @json(route('shorten'));
+            var linksDestroyBaseUrl = @json(url('links'));
             var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
             var btn = document.getElementById('btn-shorten');
@@ -542,6 +575,16 @@
                     .replace(/"/g, '&quot;');
             }
 
+            function deleteButtonHtml(linkId) {
+                return '<td class="link-actions-cell">' +
+                    '<button type="button" class="delete-link-btn" data-link-id="' + escapeHtml(String(linkId)) +
+                    '" aria-label="Delete link" title="Delete link">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' +
+                    '<path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>' +
+                    '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>' +
+                    '<path d="M10 11v6"/><path d="M14 11v6"/></svg></button></td>';
+            }
+
             function buildRowHtml(link) {
                 var cloakBadge = link.cloaked ?
                     '<span class="badge badge-cloak-on">On</span>' :
@@ -559,6 +602,7 @@
                     '<td><span class="clicks-count">' + escapeHtml(String(link.clicks || 0)) + '</span></td>' +
                     '<td>' + cloakBadge + '</td>' +
                     '<td><span class="badge badge-source">' + escapeHtml(link.source || 'web') + '</span></td>' +
+                    deleteButtonHtml(link.id) +
                     '</tr>';
             }
 
@@ -572,6 +616,7 @@
                 linksTableWrap.innerHTML = '<table class="links-table" id="links-table">' +
                     '<thead><tr>' +
                     '<th>Short link</th><th>Clicks</th><th>Cloaking</th><th>Source</th>' +
+                    '<th aria-label="Actions"></th>' +
                     '</tr></thead><tbody id="links-tbody"></tbody></table>';
 
                 linksTbody = document.getElementById('links-tbody');
@@ -616,17 +661,91 @@
                 });
             }
 
+            function decrementLinksCount() {
+                if (!linksCount) return;
+                var match = linksCount.textContent.match(/\((\d+)\)/);
+                if (!match) return;
+                var total = Math.max(0, parseInt(match[1], 10) - 1);
+                linksCount.textContent = '(' + total + ')';
+            }
+
+            function showEmptyLinksState() {
+                if (!linksTableWrap) return;
+                linksTableWrap.innerHTML =
+                    '<div class="empty-state" id="links-empty">' +
+                    '<div class="empty-state-icon" aria-hidden="true">🔗</div>' +
+                    '<h3>No links yet</h3>' +
+                    '<p>Shorten your first URL above and it will appear here.</p>' +
+                    '</div>';
+                linksTbody = null;
+            }
+
+            function deleteLinkRow(linkId) {
+                if (!linksTbody) return;
+                var row = linksTbody.querySelector('[data-link-id="' + linkId + '"]');
+                if (!row) return;
+                row.remove();
+                decrementLinksCount();
+                if (!linksTbody.children.length) {
+                    showEmptyLinksState();
+                }
+            }
+
             document.addEventListener('click', function(e) {
                 var copyBtn = e.target.closest('.copy-btn');
-                if (!copyBtn) return;
-                var text = copyBtn.getAttribute('data-copy-url') || copyBtn.getAttribute('data-copy-text');
-                if (!text) return;
-                copyText(text)
-                    .then(function() {
-                        showToast('Copied to clipboard!', 'success');
+                if (copyBtn) {
+                    var text = copyBtn.getAttribute('data-copy-url') || copyBtn.getAttribute('data-copy-text');
+                    if (!text) return;
+                    copyText(text)
+                        .then(function() {
+                            showToast('Copied to clipboard!', 'success');
+                        })
+                        .catch(function() {
+                            showToast('Could not copy. Select and copy manually.', 'error');
+                        });
+                    return;
+                }
+
+                var deleteBtn = e.target.closest('.delete-link-btn');
+                if (!deleteBtn) return;
+
+                var linkId = deleteBtn.getAttribute('data-link-id');
+                if (!linkId) return;
+
+                if (!confirm('Delete this short link? This cannot be undone.')) {
+                    return;
+                }
+
+                deleteBtn.disabled = true;
+
+                fetch(linksDestroyBaseUrl + '/' + linkId, {
+                        method: 'DELETE',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(function(res) {
+                        return res.json().then(function(data) {
+                            return {
+                                ok: res.ok,
+                                data: data
+                            };
+                        });
+                    })
+                    .then(function(r) {
+                        if (r.ok && r.data.success) {
+                            deleteLinkRow(linkId);
+                            showToast(r.data.message || 'Link deleted.', 'success');
+                        } else {
+                            showToast(r.data.message || 'Could not delete link.', 'error');
+                            deleteBtn.disabled = false;
+                        }
                     })
                     .catch(function() {
-                        showToast('Could not copy. Select and copy manually.', 'error');
+                        showToast('Network error. Please try again.', 'error');
+                        deleteBtn.disabled = false;
                     });
             });
 

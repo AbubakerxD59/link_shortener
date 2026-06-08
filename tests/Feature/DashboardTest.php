@@ -85,6 +85,39 @@ class DashboardTest extends TestCase
         $this->assertAuthenticated();
     }
 
+    public function test_user_can_delete_own_link(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+
+        $link = ShortLink::create([
+            'user_id' => $user->id,
+            'short_code' => 'mine01',
+            'original_url' => 'https://example.com/mine',
+            'redirect_mode' => ShortLink::REDIRECT_BRIDGE,
+            'source' => ShortLink::SOURCE_WEB,
+        ]);
+
+        $otherLink = ShortLink::create([
+            'user_id' => $other->id,
+            'short_code' => 'other1',
+            'original_url' => 'https://example.com/other',
+            'redirect_mode' => ShortLink::REDIRECT_BRIDGE,
+            'source' => ShortLink::SOURCE_WEB,
+        ]);
+
+        $this->actingAs($user)
+            ->deleteJson(route('links.destroy', $link))
+            ->assertOk()
+            ->assertJson(['success' => true]);
+
+        $this->assertDatabaseMissing('short_links', ['id' => $link->id]);
+
+        $this->actingAs($user)
+            ->deleteJson(route('links.destroy', $otherLink))
+            ->assertForbidden();
+    }
+
     public function test_dashboard_shorten_adds_user_link(): void
     {
         Http::fake([

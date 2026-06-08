@@ -22,6 +22,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::delete('/links/{shortLink}', [DashboardController::class, 'destroy'])->name('links.destroy');
 
     Route::get('/branded-domains', [CustomDomainController::class, 'index'])->name('branded-domains.index');
     Route::post('/branded-domains', [CustomDomainController::class, 'store'])->name('branded-domains.store');
