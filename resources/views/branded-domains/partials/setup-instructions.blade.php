@@ -47,7 +47,7 @@
                 <div>
                     <p><strong>Enable HTTPS</strong> so <code>https://{{ $domainSetup['domain'] }}</code> opens without a security error.</p>
                     <p class="record-tip" style="margin-top: 0.75rem;">
-                        Short.io issues SSL certificates automatically. For this app, choose one option:
+                        Choose one option to enable HTTPS for your branded domain:
                     </p>
                     <ul class="ssl-options-list">
                         <li><strong>Cloudflare (recommended):</strong> If {{ $domainSetup['base_domain'] }} uses Cloudflare DNS, turn on the <strong>orange cloud proxy</strong> for the CNAME record above. Cloudflare provides free SSL for <code>{{ $domainSetup['domain'] }}</code>.</li>

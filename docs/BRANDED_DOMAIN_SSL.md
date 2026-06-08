@@ -2,7 +2,7 @@
 
 DNS verification only confirms that a customer's CNAME points to your server. **Links still fail in the browser** until `https://their-branded-domain` has a valid TLS certificate.
 
-Short.io handles this on their edge automatically. Self-hosted deployments must configure SSL explicitly.
+Some hosted short-link services issue SSL for customer domains automatically. With this app, you must configure SSL explicitly.
 
 ## Why you see `ERR_SSL_PROTOCOL_ERROR`
 
