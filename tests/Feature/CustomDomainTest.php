@@ -150,6 +150,26 @@ class CustomDomainTest extends TestCase
             ->assertSee("'go'");
     }
 
+    public function test_verified_domain_with_https_hides_dns_setup_steps(): void
+    {
+        $user = User::factory()->create();
+        $domain = $this->makeSubdomain([
+            'user_id' => $user->id,
+            'verified_at' => now(),
+        ]);
+
+        config(['app.url' => 'http://127.0.0.1:8000']);
+        $this->mockVerifiedSubdomainDns('go.brand.test', '127.0.0.1', true);
+
+        $this->actingAs($user)
+            ->get(route('branded-domains.show', $domain))
+            ->assertOk()
+            ->assertSee('go.brand.test is active')
+            ->assertSee('https://go.brand.test/abc123')
+            ->assertDontSee('DNS setup required for go.brand.test')
+            ->assertDontSee('DNS changes can take up to a few hours to propagate.');
+    }
+
     public function test_main_domain_details_page_shows_cname_with_at_host(): void
     {
         $user = User::factory()->create();

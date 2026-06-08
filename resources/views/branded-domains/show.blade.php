@@ -8,6 +8,7 @@
 
 @section('content')
 @php
+    $domainReady = $customDomain->isVerified() && ($domainSetup['ssl_ok'] ?? false);
     $copyLines = collect($domainSetup['dns_records'])
         ->map(fn ($record) => 'TYPE: '.$record['type']."\n".'NAME: '.$record['name']."\n".'VALUE: '.$record['value'])
         ->implode("\n\n");
@@ -25,7 +26,13 @@
             <div class="domain-panel-header">
                 <div>
                     <h1>{{ $customDomain->domain }}</h1>
-                    <p class="domain-lead">Add one CNAME record at your domain registrar, then refresh to activate your branded short links.</p>
+                    <p class="domain-lead">
+                        @if ($domainReady)
+                            This branded domain is verified and ready for short links.
+                        @else
+                            Add one CNAME record at your domain registrar, then refresh to activate your branded short links.
+                        @endif
+                    </p>
                 </div>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end;">
                     @if ($customDomain->isVerified())
@@ -67,13 +74,15 @@
             @include('branded-domains.partials.setup-instructions', ['domainSetup' => $domainSetup])
 
             <div class="domain-actions">
-                <button
-                    type="button"
-                    class="btn btn-outline"
-                    data-copy-text="{{ e($copyLines) }}"
-                >Copy</button>
+                @unless ($domainReady)
+                    <button
+                        type="button"
+                        class="btn btn-outline"
+                        data-copy-text="{{ e($copyLines) }}"
+                    >Copy</button>
+                @endunless
 
-                @if (! $customDomain->isVerified() || ! ($domainSetup['ssl_ok'] ?? true))
+                @if (! $domainReady)
                     <form method="POST" action="{{ route('branded-domains.verify', $customDomain) }}">
                         @csrf
                         <button type="submit" class="btn btn-primary">Refresh</button>
