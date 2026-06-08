@@ -62,7 +62,7 @@
         @if ($customDomain->isVerified() && ! ($domainSetup['ssl_ok'] ?? true))
             <div class="domain-alert domain-alert-warning">
                 <strong>HTTPS is not working for {{ $customDomain->domain }}</strong>
-                <p>DNS is correct, but browsers cannot open <code>https://{{ $customDomain->domain }}</code> yet. This is why you may see <em>ERR_SSL_PROTOCOL_ERROR</em>. Enable SSL for this hostname using one of the options below.</p>
+                <p>DNS is correct, but <code>https://{{ $customDomain->domain }}</code> is not reachable yet. On Cloudflare this often shows as <strong>Error 525</strong> — set SSL/TLS encryption to <strong>Flexible</strong> and add the domain as a parked domain on your host. See step 3 below.</p>
             </div>
         @endif
 

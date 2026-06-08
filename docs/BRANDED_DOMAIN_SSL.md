@@ -1,38 +1,39 @@
 # Branded domain HTTPS (SSL)
 
-DNS verification only confirms that a customer's CNAME points to your server. **Links still fail in the browser** until `https://their-branded-domain` has a valid TLS certificate.
+DNS verification only confirms that a customer's CNAME points to your server. **Links still fail in the browser** until `https://their-branded-domain` works end-to-end.
 
-Some hosted short-link services issue SSL for customer domains automatically. With this app, you must configure SSL explicitly.
+## Cloudflare Error 525
 
-## Why you see `ERR_SSL_PROTOCOL_ERROR`
+If you see **Error 525: SSL handshake failed**, the browser and Cloudflare are fine — Cloudflare cannot complete TLS with your **origin** (Hostinger).
+
+Typical cause on shared hosting:
+
+1. Cloudflare SSL mode is **Full** or **Full (strict)**, but Hostinger has **no certificate** for the branded hostname (only for your main app domain).
+2. The branded hostname is **not added** in Hostinger hPanel, so the origin rejects the request.
+
+### Fix (Cloudflare + Hostinger)
+
+1. **Cloudflare DNS:** CNAME `shrtlnk` → `CUSTOM_DOMAIN_CNAME_TARGET` with **Proxied** (orange cloud) ON.
+2. **Cloudflare SSL/TLS → Overview:** set encryption mode to **Flexible** (not Full).
+3. **Hostinger hPanel:** on the site for `CUSTOM_DOMAIN_CNAME_TARGET`, go to **Parked Domains** and add `shrtlnk.customer.com`.
+4. Click **Refresh** on the branded domain page in this app.
+
+Use **Full (strict)** only if you install a valid origin certificate for each branded hostname.
+
+## Why visitors need HTTPS
 
 Your app generates branded short URLs with `https://` (see `CUSTOM_DOMAIN_SCHEME`). When a visitor opens `https://shrtlnk.customer.com/abc123`:
 
-1. DNS resolves `shrtlnk.customer.com` → your `CUSTOM_DOMAIN_CNAME_TARGET`
-2. The browser connects on port **443** and expects TLS for **`shrtlnk.customer.com`**
-3. If your server only has a certificate for your main app hostname, the handshake fails
-
-## Option A — Cloudflare proxy (recommended)
-
-If the customer manages DNS in Cloudflare:
-
-1. Create the CNAME: `shrtlnk` → your `CUSTOM_DOMAIN_CNAME_TARGET` (e.g. `shrtlnk.com`)
-2. Turn **Proxied** on (orange cloud)
-3. Cloudflare issues SSL for `shrtlnk.customer.com` automatically
-4. Set Cloudflare SSL mode to **Full** or **Full (strict)** toward your origin
-5. Your origin must accept HTTP/HTTPS for customer `Host` headers (Laravel already does)
-
-This works well on shared hosting (e.g. Hostinger) where you cannot install a custom reverse proxy.
-
-## Option B — Manual certificate
-
-Install a TLS certificate for each customer hostname on your web server. This does not scale well for many domains.
+1. DNS resolves the branded hostname → Cloudflare (if proxied) → your server
+2. The browser expects a working HTTPS response
+3. If Cloudflare cannot reach the origin correctly, you get Error 525 or 403
 
 ## Checklist
 
-- [ ] `CUSTOM_DOMAIN_CNAME_TARGET` resolves to your app server
-- [ ] Your main app hostname has HTTPS on the origin
-- [ ] Each verified customer domain has HTTPS (Cloudflare proxy or manual cert)
+- [ ] `CUSTOM_DOMAIN_CNAME_TARGET` is your live app hostname (e.g. `shrtlnk.com`)
+- [ ] CNAME is **proxied** in Cloudflare (orange cloud)
+- [ ] Cloudflare encryption mode is **Flexible** (shared hosting) or origin has a matching cert (Full strict)
+- [ ] Branded hostname is a **parked domain** on Hostinger pointing to the same site
 - [ ] `CUSTOM_DOMAIN_SCHEME=https` in production `.env`
 
 ## Testing
@@ -41,4 +42,4 @@ Install a TLS certificate for each customer hostname on your web server. This do
 curl -I https://shrtlnk.customer.com/testcode
 ```
 
-A working setup returns `HTTP/2 302` or `404` (not a TLS error).
+A working setup returns `HTTP/2 302` or `404` — not `525`, `526`, or a TLS error.

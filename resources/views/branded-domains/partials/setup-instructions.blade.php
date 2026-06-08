@@ -64,8 +64,9 @@
                             Choose one option to enable HTTPS for your branded domain:
                         </p>
                         <ul class="ssl-options-list">
-                            <li><strong>Cloudflare (recommended):</strong> If {{ $domainSetup['base_domain'] }} uses Cloudflare DNS, turn on the <strong>orange cloud proxy</strong> for the CNAME record above. Cloudflare provides free SSL for <code>{{ $domainSetup['domain'] }}</code>.</li>
-                            <li><strong>Manual certificate:</strong> Issue a TLS certificate for <code>{{ $domainSetup['domain'] }}</code> on the web server that receives traffic for <code>{{ $domainSetup['cname_target'] }}</code>.</li>
+                            <li><strong>Cloudflare (recommended):</strong> Turn on the <strong>orange cloud proxy</strong> for the CNAME record above. Then open <strong>SSL/TLS → Overview</strong> and set encryption mode to <strong>Flexible</strong> (required on shared hosting such as Hostinger, where the origin has no certificate for <code>{{ $domainSetup['domain'] }}</code>). Using <em>Full</em> or <em>Full (strict)</em> causes Cloudflare <strong>Error 525</strong>.</li>
+                            <li><strong>Hostinger:</strong> In hPanel, open your main site (<code>{{ $domainSetup['cname_target'] }}</code>) → <strong>Parked Domains</strong> (or <strong>Domains → Parked Domains</strong>) and add <code>{{ $domainSetup['domain'] }}</code> so requests reach this app.</li>
+                            <li><strong>Manual certificate:</strong> Issue a TLS certificate for <code>{{ $domainSetup['domain'] }}</code> on the web server, then use Cloudflare <em>Full (strict)</em>.</li>
                         </ul>
                     </div>
                 </div>
