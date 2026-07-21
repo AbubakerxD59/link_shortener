@@ -13,8 +13,13 @@ return new class extends Migration
         }
 
         Schema::table('short_links', function (Blueprint $table) {
-            $table->string('redirect_mode', 20)->default('bridge')->after('original_url');
-            $table->unsignedTinyInteger('bridge_delay_seconds')->default(5)->after('redirect_mode');
+            if (! Schema::hasColumn('short_links', 'redirect_mode')) {
+                $table->string('redirect_mode', 20)->default('bridge')->after('original_url');
+            }
+
+            if (! Schema::hasColumn('short_links', 'bridge_delay_seconds')) {
+                $table->unsignedTinyInteger('bridge_delay_seconds')->default(5)->after('redirect_mode');
+            }
         });
     }
 
@@ -25,7 +30,13 @@ return new class extends Migration
         }
 
         Schema::table('short_links', function (Blueprint $table) {
-            $table->dropColumn(['redirect_mode', 'bridge_delay_seconds']);
+            $columns = collect(['redirect_mode', 'bridge_delay_seconds'])
+                ->filter(fn (string $column) => Schema::hasColumn('short_links', $column))
+                ->all();
+
+            if ($columns !== []) {
+                $table->dropColumn($columns);
+            }
         });
     }
 };

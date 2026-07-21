@@ -64,7 +64,7 @@ class CustomDomainController extends Controller
                 ->withErrors(['domain' => $e->getMessage()]);
         }
 
-        $message = 'Branded domain added. Follow the connection steps to verify it.';
+        $message = 'Domain submitted. It will take up to 24 hours for our team to review and activate it.';
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -76,6 +76,11 @@ class CustomDomainController extends Controller
 
         return redirect()
             ->route('branded-domains.show', $customDomain)
+            ->with('toast', [
+                'message' => $message,
+                'type' => 'success',
+                'duration' => 6000,
+            ])
             ->with('domain_status', $message);
     }
 

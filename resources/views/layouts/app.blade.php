@@ -319,6 +319,9 @@
                 @auth
                     <a href="{{ route('dashboard') }}" @if(request()->routeIs('dashboard')) class="active" @endif>Dashboard</a>
                     <a href="{{ route('branded-domains.index') }}" @if(request()->routeIs('branded-domains.*')) class="active" @endif>Branded Domains</a>
+                    @if (auth()->user()->isAdmin())
+                        <a href="{{ route('admin.branded-domains.index') }}" @if(request()->routeIs('admin.*')) class="active" @endif>Admin</a>
+                    @endif
                     <span class="user-greeting">{{ auth()->user()->name }}</span>
                     <form class="logout-form" method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -351,16 +354,27 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script>
-        window.showToast = function(message, type) {
+        window.showToast = function(message, type, duration) {
             var el = document.getElementById('toast');
             el.textContent = message;
             el.className = 'toast show ' + (type || 'success');
             clearTimeout(window._toastTimer);
             window._toastTimer = setTimeout(function() {
                 el.classList.remove('show');
-            }, 3000);
+            }, duration || 3000);
         };
     </script>
+    @if (session('toast'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                showToast(
+                    @json(session('toast.message')),
+                    @json(session('toast.type') ?? 'success'),
+                    {{ (int) (session('toast.duration') ?? 3000) }}
+                );
+            });
+        </script>
+    @endif
     @stack('scripts')
 </body>
 </html>

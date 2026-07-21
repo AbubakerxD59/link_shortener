@@ -11,7 +11,7 @@
     <div class="container">
         <div class="page-header">
             <h1>Branded domains</h1>
-            <p>Add multiple custom hostnames for your short links. Each domain can be verified independently and one verified domain is used as the default for new links.</p>
+            <p>Add multiple custom hostnames for your short links. After you submit a domain, our team reviews and activates it within about 24 hours. One activated domain can be set as the default for new links.</p>
         </div>
 
         @if (session('domain_status'))
@@ -130,9 +130,9 @@
                                     </td>
                                     <td>
                                         @if ($domain->isVerified())
-                                            <span class="badge badge-verified">Verified</span>
+                                            <span class="badge badge-verified">Active</span>
                                         @else
-                                            <span class="badge badge-pending">Pending</span>
+                                            <span class="badge badge-pending">Pending review</span>
                                         @endif
                                     </td>
                                     <td>

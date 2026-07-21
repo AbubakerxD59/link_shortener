@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CustomDomainController as AdminCustomDomainController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomDomainController;
 use App\Http\Controllers\DashboardController;
@@ -30,6 +31,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/branded-domains/{customDomain}/verify', [CustomDomainController::class, 'verify'])->name('branded-domains.verify');
     Route::post('/branded-domains/{customDomain}/default', [CustomDomainController::class, 'makeDefault'])->name('branded-domains.default');
     Route::delete('/branded-domains/{customDomain}', [CustomDomainController::class, 'destroy'])->name('branded-domains.destroy');
+
+    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/branded-domains', [AdminCustomDomainController::class, 'index'])->name('branded-domains.index');
+        Route::post('/branded-domains/{customDomain}/activate', [AdminCustomDomainController::class, 'activate'])->name('branded-domains.activate');
+    });
 });
 
 Route::get('/api-docs', [DocumentationController::class, 'index'])->name('docs');

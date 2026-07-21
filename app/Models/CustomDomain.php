@@ -60,7 +60,7 @@ class CustomDomain extends Model
 
     public function statusLabel(): string
     {
-        return $this->isVerified() ? 'Verified' : 'Pending';
+        return $this->isVerified() ? 'Active' : 'Pending review';
     }
 
     public static function verifiedForHost(string $host): ?self

@@ -79,6 +79,16 @@ class CustomDomainService
         ];
     }
 
+    /**
+     * Mark a branded domain active after ops has parked it on the host.
+     */
+    public function activate(CustomDomain $customDomain): CustomDomain
+    {
+        $customDomain->update(['verified_at' => now()]);
+
+        return $customDomain->refresh();
+    }
+
     public function domainHasWorkingHttps(string $domain): bool
     {
         if (config('custom_domains.scheme', 'https') !== 'https') {

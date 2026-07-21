@@ -12,6 +12,10 @@ return new class extends Migration
             return;
         }
 
+        if (Schema::hasColumn('short_links', 'source')) {
+            return;
+        }
+
         Schema::table('short_links', function (Blueprint $table) {
             $table->string('source', 64)->nullable()->after('thumbnail_url')->index();
         });
@@ -20,6 +24,10 @@ return new class extends Migration
     public function down(): void
     {
         if (config('engagyo.use_shared_database')) {
+            return;
+        }
+
+        if (! Schema::hasColumn('short_links', 'source')) {
             return;
         }
 
