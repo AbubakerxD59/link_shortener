@@ -61,7 +61,6 @@
                     <div>
                         <p>
                             <strong>Our team will review your domain and activate it within 24 hours.</strong>
-                            You only need to complete steps 1 and 2 on your side — no further action is required from you.
                         </p>
                         <p class="record-tip" style="margin-top: 0.75rem;">
                             Once activated, short links on <code>{{ $domainSetup['domain'] }}</code> will work automatically.
