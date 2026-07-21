@@ -314,13 +314,13 @@
                 {{ config('app.name', 'ShrtLnk') }}
             </a>
             <nav class="header-nav" aria-label="Main">
-                <a href="{{ route('home') }}" @if(request()->routeIs('home')) class="active" @endif>Home</a>
-                <a href="{{ route('docs') }}" @if(request()->routeIs('docs')) class="active" @endif>API Docs</a>
                 @auth
-                    <a href="{{ route('dashboard') }}" @if(request()->routeIs('dashboard')) class="active" @endif>Dashboard</a>
-                    <a href="{{ route('branded-domains.index') }}" @if(request()->routeIs('branded-domains.*')) class="active" @endif>Branded Domains</a>
                     @if (auth()->user()->isAdmin())
-                        <a href="{{ route('admin.branded-domains.index') }}" @if(request()->routeIs('admin.*')) class="active" @endif>Admin</a>
+                        <a href="{{ route('admin.branded-domains.index') }}" @if(request()->routeIs('admin.*')) class="active" @endif>Branded Domains</a>
+                    @else
+                        <a href="{{ route('home') }}" @if(request()->routeIs('home')) class="active" @endif>Home</a>
+                        <a href="{{ route('dashboard') }}" @if(request()->routeIs('dashboard')) class="active" @endif>Dashboard</a>
+                        <a href="{{ route('branded-domains.index') }}" @if(request()->routeIs('branded-domains.*')) class="active" @endif>Branded Domains</a>
                     @endif
                     <span class="user-greeting">{{ auth()->user()->name }}</span>
                     <form class="logout-form" method="POST" action="{{ route('logout') }}">
@@ -334,6 +334,7 @@
                         </button>
                     </form>
                 @else
+                    <a href="{{ route('home') }}" @if(request()->routeIs('home')) class="active" @endif>Home</a>
                     <a href="{{ route('login') }}" @if(request()->routeIs('login')) class="active" @endif>Log in</a>
                     <a href="{{ route('register') }}" @if(request()->routeIs('register')) class="active" @endif>Sign up</a>
                 @endauth

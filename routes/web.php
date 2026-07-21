@@ -4,7 +4,7 @@ use App\Http\Controllers\Admin\CustomDomainController as AdminCustomDomainContro
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomDomainController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\DocumentationController;
+// use App\Http\Controllers\DocumentationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ShortenController;
 use App\Http\Controllers\ShortLinkRedirectController;
@@ -38,8 +38,8 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-Route::get('/api-docs', [DocumentationController::class, 'index'])->name('docs');
-Route::get('/api-docs/openapi.yaml', [DocumentationController::class, 'openapi'])->name('docs.openapi');
+// Route::get('/api-docs', [DocumentationController::class, 'index'])->name('docs');
+// Route::get('/api-docs/openapi.yaml', [DocumentationController::class, 'openapi'])->name('docs.openapi');
 
 Route::post('/shorten', [ShortenController::class, 'store'])->name('shorten');
 
