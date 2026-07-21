@@ -30,15 +30,15 @@
                         @if ($domainReady)
                             This branded domain is verified and ready for short links.
                         @else
-                            Add one CNAME record at your domain registrar, then refresh to activate your branded short links.
+                            Complete the DNS steps below. Our team will review and activate your domain within 24 hours.
                         @endif
                     </p>
                 </div>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end;">
                     @if ($customDomain->isVerified())
-                        <span class="badge badge-verified">Verified</span>
+                        <span class="badge badge-verified">Active</span>
                     @else
-                        <span class="badge badge-pending">Pending verification</span>
+                        <span class="badge badge-pending">Pending review</span>
                     @endif
                     @if ($customDomain->is_default)
                         <span class="badge badge-default">Default for new links</span>
@@ -61,8 +61,8 @@
 
         @if ($customDomain->isVerified() && ! ($domainSetup['ssl_ok'] ?? true))
             <div class="domain-alert domain-alert-warning">
-                <strong>HTTPS is not working for {{ $customDomain->domain }}</strong>
-                <p>DNS is correct, but <code>https://{{ $customDomain->domain }}</code> is not reachable yet. On Cloudflare this often shows as <strong>Error 525</strong> — set SSL/TLS encryption to <strong>Flexible</strong> and add the domain as a parked domain on your host. See step 3 below.</p>
+                <strong>{{ $customDomain->domain }} is being finalized</strong>
+                <p>Our team is finishing HTTPS setup. Your domain should be fully ready shortly.</p>
             </div>
         @endif
 
@@ -74,20 +74,13 @@
             @include('branded-domains.partials.setup-instructions', ['domainSetup' => $domainSetup])
 
             <div class="domain-actions">
-                @unless ($domainReady)
+                @unless ($customDomain->isVerified())
                     <button
                         type="button"
                         class="btn btn-outline"
                         data-copy-text="{{ e($copyLines) }}"
-                    >Copy</button>
+                    >Copy DNS record</button>
                 @endunless
-
-                @if (! $domainReady)
-                    <form method="POST" action="{{ route('branded-domains.verify', $customDomain) }}">
-                        @csrf
-                        <button type="submit" class="btn btn-primary">Refresh</button>
-                    </form>
-                @endif
 
                 @if ($customDomain->isVerified() && ! $customDomain->is_default)
                     <form method="POST" action="{{ route('branded-domains.default', $customDomain) }}">

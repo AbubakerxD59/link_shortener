@@ -10,7 +10,7 @@
         <div class="setup-intro">
             <h2>{{ $domainSetup['domain'] }} is active</h2>
             <p class="domain-setup-lead">
-                DNS and HTTPS are configured. New short links can use this domain.
+                Your branded domain is ready. New short links can use this domain.
             </p>
         </div>
 
@@ -22,7 +22,7 @@
         <div class="setup-intro">
             <h2>DNS setup required for {{ $domainSetup['domain'] }}</h2>
             <p class="domain-setup-lead">
-                Add the record below at your domain registrar to activate your short links.
+                Complete steps 1 and 2 below at your domain registrar. Our team handles the rest.
             </p>
         </div>
 
@@ -59,15 +59,13 @@
                 <div class="plain-step-head">
                     <span class="setup-step-num">3</span>
                     <div>
-                        <p><strong>Enable HTTPS</strong> so <code>https://{{ $domainSetup['domain'] }}</code> opens without a security error.</p>
-                        <p class="record-tip" style="margin-top: 0.75rem;">
-                            Choose one option to enable HTTPS for your branded domain:
+                        <p>
+                            <strong>Our team will review your domain and activate it within 24 hours.</strong>
+                            You only need to complete steps 1 and 2 on your side — no further action is required from you.
                         </p>
-                        <ul class="ssl-options-list">
-                            <li><strong>Cloudflare (recommended):</strong> Turn on the <strong>orange cloud proxy</strong> for the CNAME record above. Then open <strong>SSL/TLS → Overview</strong> and set encryption mode to <strong>Flexible</strong> (required on shared hosting such as Hostinger, where the origin has no certificate for <code>{{ $domainSetup['domain'] }}</code>). Using <em>Full</em> or <em>Full (strict)</em> causes Cloudflare <strong>Error 525</strong>.</li>
-                            <li><strong>Hostinger:</strong> In hPanel, open your main site (<code>{{ $domainSetup['cname_target'] }}</code>) → <strong>Parked Domains</strong> (or <strong>Domains → Parked Domains</strong>) and add <code>{{ $domainSetup['domain'] }}</code> so requests reach this app.</li>
-                            <li><strong>Manual certificate:</strong> Issue a TLS certificate for <code>{{ $domainSetup['domain'] }}</code> on the web server, then use Cloudflare <em>Full (strict)</em>.</li>
-                        </ul>
+                        <p class="record-tip" style="margin-top: 0.75rem;">
+                            Once activated, short links on <code>{{ $domainSetup['domain'] }}</code> will work automatically.
+                        </p>
                     </div>
                 </div>
             </article>
@@ -97,16 +95,13 @@
         </div>
 
         <p class="setup-time-note">
-            DNS changes can take up to a few hours to propagate.
-            @if (! $verified || ! $sslOk)
-                Click <strong>Refresh</strong> below after DNS and HTTPS are configured.
-            @endif
+            DNS changes can take up to a few hours to propagate. After you finish steps 1 and 2, our team will review and activate your domain within 24 hours.
         </p>
 
         @if ($verified)
-            <div class="domain-note domain-note-warning">
-                <strong>DNS verified — waiting on HTTPS</strong>
-                <p>Short links will use <code>{{ $domainSetup['example_short_url'] }}</code>, but visitors will see a browser error until step 3 is complete.</p>
+            <div class="domain-note domain-note-success">
+                <strong>Domain activated</strong>
+                <p>Short links will use <code>{{ $domainSetup['example_short_url'] }}</code>.</p>
             </div>
         @endif
     @endif
