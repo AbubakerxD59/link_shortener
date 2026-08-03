@@ -199,12 +199,16 @@ class UrlShortenerService
                 return ['success' => false, 'message' => 'Invalid URL'];
             }
 
-            if ($this->urlConflictsWithAnotherLink($shortLink, $normalizedUrl, $nextRedirectMode, $nextSource, $nextUserId)) {
+            $currentUrl = ShortLink::normalizeUrl((string) $shortLink->original_url);
+            // Only conflict-check when the destination changes. Cloak toggles keep the
+            // same short code; blocking against a sibling (or another domain) is wrong.
+            if ($normalizedUrl !== $currentUrl
+                && $this->urlConflictsWithAnotherLink($shortLink, $normalizedUrl, $nextRedirectMode, $nextSource, $nextUserId)) {
                 return ['success' => false, 'message' => 'Another short link already uses this URL.'];
             }
 
             $updates['original_url'] = $normalizedUrl;
-            if ($nextRedirectMode === ShortLink::REDIRECT_BRIDGE) {
+            if ($nextRedirectMode === ShortLink::REDIRECT_BRIDGE && $normalizedUrl !== $currentUrl) {
                 $refetchPreview = true;
             }
         }
@@ -259,6 +263,7 @@ class UrlShortenerService
         $redirectMode = $redirectMode ?? $shortLink->redirect_mode ?? ShortLink::REDIRECT_BRIDGE;
         $source = $source ?? $shortLink->source ?? ShortLink::SOURCE_API;
         $userId = $userId ?? $shortLink->user_id;
+        $customDomainId = $shortLink->custom_domain_id;
 
         return ShortLink::query()
             ->where('original_url', $normalizedUrl)
@@ -279,6 +284,11 @@ class UrlShortenerService
                 $userId !== null,
                 fn ($q) => $q->where('user_id', $userId),
                 fn ($q) => $q->whereNull('user_id')
+            )
+            ->when(
+                $customDomainId !== null,
+                fn ($q) => $q->where('custom_domain_id', $customDomainId),
+                fn ($q) => $q->whereNull('custom_domain_id')
             )
             ->exists();
     }
