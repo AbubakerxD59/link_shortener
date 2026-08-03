@@ -181,6 +181,21 @@ class CustomDomainService
         return CustomDomain::query()
             ->where('id', $customDomainId)
             ->where('user_id', $user->id)
+            ->whereNull('engagyo_user_id')
+            ->whereNotNull('verified_at')
+            ->first();
+    }
+
+    public function resolveVerifiedDomainForUserId(int $userId, ?int $customDomainId): ?CustomDomain
+    {
+        if ($customDomainId === null) {
+            return null;
+        }
+
+        return CustomDomain::query()
+            ->where('id', $customDomainId)
+            ->where('user_id', $userId)
+            ->whereNull('engagyo_user_id')
             ->whereNotNull('verified_at')
             ->first();
     }
@@ -248,18 +263,25 @@ class CustomDomainService
         }
 
         if (CustomDomain::query()->where('domain', $domain)->exists()) {
-            $owner = CustomDomain::query()->where('domain', $domain)->value('user_id');
-            $message = $owner === $user->id
+            $existing = CustomDomain::query()->where('domain', $domain)->first();
+            $ownsIt = $existing
+                && $existing->engagyo_user_id === null
+                && (int) $existing->user_id === (int) $user->id;
+            $message = $ownsIt
                 ? 'You have already added this domain.'
                 : 'This domain is already registered by another account.';
 
             throw new \InvalidArgumentException($message);
         }
 
-        $isFirst = ! CustomDomain::query()->where('user_id', $user->id)->exists();
+        $isFirst = ! CustomDomain::query()
+            ->where('user_id', $user->id)
+            ->whereNull('engagyo_user_id')
+            ->exists();
 
         return CustomDomain::query()->create([
             'user_id' => $user->id,
+            'engagyo_user_id' => null,
             'domain' => $domain,
             'domain_type' => $domainType,
             'base_domain' => $baseDomain,
@@ -268,6 +290,81 @@ class CustomDomainService
             'verified_at' => null,
             'is_default' => $isFirst,
         ]);
+    }
+
+    /**
+     * Register a branded domain owned by an Engagyo user (API sync).
+     */
+    public function assignDomainForEngagyo(
+        int $engagyoUserId,
+        string $baseDomain,
+        string $domainType,
+        ?string $subdomainPrefix = null
+    ): CustomDomain {
+        $baseDomain = CustomDomain::normalizeHost($baseDomain);
+        $domainType = $domainType === CustomDomain::TYPE_APEX
+            ? CustomDomain::TYPE_APEX
+            : CustomDomain::TYPE_SUBDOMAIN;
+
+        if (! $this->isValidBaseDomain($baseDomain)) {
+            throw new \InvalidArgumentException('Enter a valid domain name (e.g. yourbrand.com).');
+        }
+
+        if ($domainType === CustomDomain::TYPE_SUBDOMAIN) {
+            $subdomainPrefix = strtolower(trim((string) $subdomainPrefix));
+
+            if (! $this->isValidSubdomainPrefix($subdomainPrefix)) {
+                throw new \InvalidArgumentException('Enter a valid subdomain label (e.g. go, links, or shrtlnk).');
+            }
+
+            $domain = $subdomainPrefix.'.'.$baseDomain;
+        } else {
+            $domain = $baseDomain;
+            $subdomainPrefix = null;
+        }
+
+        if ($this->isReservedHost($domain)) {
+            throw new \InvalidArgumentException('Enter a custom hostname, not this app\'s default domain or an IP address.');
+        }
+
+        if (CustomDomain::query()->where('domain', $domain)->exists()) {
+            $existing = CustomDomain::query()->where('domain', $domain)->first();
+            $ownsIt = $existing && (int) $existing->engagyo_user_id === $engagyoUserId;
+            $message = $ownsIt
+                ? 'You have already added this domain.'
+                : 'This domain is already registered by another account.';
+
+            throw new \InvalidArgumentException($message);
+        }
+
+        $isFirst = ! CustomDomain::query()
+            ->where('engagyo_user_id', $engagyoUserId)
+            ->exists();
+
+        return CustomDomain::query()->create([
+            'user_id' => $engagyoUserId,
+            'engagyo_user_id' => $engagyoUserId,
+            'domain' => $domain,
+            'domain_type' => $domainType,
+            'base_domain' => $baseDomain,
+            'subdomain_prefix' => $subdomainPrefix,
+            'verification_token' => CustomDomain::generateVerificationToken(),
+            'verified_at' => null,
+            'is_default' => $isFirst,
+        ]);
+    }
+
+    public function resolveVerifiedDomainForEngagyo(int $engagyoUserId, ?int $customDomainId): ?CustomDomain
+    {
+        if ($customDomainId === null) {
+            return null;
+        }
+
+        return CustomDomain::query()
+            ->where('id', $customDomainId)
+            ->where('engagyo_user_id', $engagyoUserId)
+            ->whereNotNull('verified_at')
+            ->first();
     }
 
     public function setAsDefault(User $user, CustomDomain $customDomain): void
@@ -290,18 +387,21 @@ class CustomDomainService
     public function removeDomain(CustomDomain $customDomain): void
     {
         $userId = $customDomain->user_id;
+        $engagyoUserId = $customDomain->engagyo_user_id;
         $wasDefault = $customDomain->is_default;
 
         $customDomain->delete();
 
         if ($wasDefault) {
-            $nextDefault = CustomDomain::query()
-                ->where('user_id', $userId)
-                ->whereNotNull('verified_at')
-                ->orderBy('id')
-                ->first();
+            $nextQuery = CustomDomain::query()->whereNotNull('verified_at')->orderBy('id');
 
-            $nextDefault?->update(['is_default' => true]);
+            if ($engagyoUserId !== null) {
+                $nextQuery->where('engagyo_user_id', $engagyoUserId);
+            } else {
+                $nextQuery->where('user_id', $userId)->whereNull('engagyo_user_id');
+            }
+
+            $nextQuery->first()?->update(['is_default' => true]);
         }
     }
 

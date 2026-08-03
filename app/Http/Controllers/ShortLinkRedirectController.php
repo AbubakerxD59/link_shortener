@@ -32,11 +32,17 @@ class ShortLinkRedirectController extends Controller
             $shortLink->loadMissing('customDomain');
             $linkDomain = $shortLink->customDomain;
 
+            $ownerMatches = $linkDomain && (
+                $linkDomain->engagyo_user_id !== null
+                    ? (int) $shortLink->user_id === (int) $linkDomain->engagyo_user_id
+                    : (int) $shortLink->user_id === (int) $linkDomain->user_id
+            );
+
             if (
                 ! $linkDomain
                 || ! $linkDomain->isVerified()
                 || $requestHost !== $linkDomain->domain
-                || $shortLink->user_id !== $linkDomain->user_id
+                || ! $ownerMatches
             ) {
                 abort(404, 'Short link not found.');
             }

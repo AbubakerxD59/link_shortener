@@ -29,6 +29,7 @@ class ShortLinkController extends Controller
             'thumbnail_url' => 'nullable|url|max:2048',
             'source' => 'nullable|string|max:64',
             'cloak' => 'sometimes|boolean',
+            'custom_domain_id' => 'nullable|integer|min:1',
         ]);
 
         $userAgent = $validated['user_agent'] ?? $request->userAgent();
@@ -36,6 +37,33 @@ class ShortLinkController extends Controller
         $cloaked = array_key_exists('url_cloak', $validated)
             ? ShortLink::cloakedFromUrlCloak($validated['url_cloak'])
             : ShortLink::cloakedFromUrlCloak($request->input('cloak'), true);
+
+        $customDomainId = null;
+        if (! empty($validated['custom_domain_id']) && ! empty($validated['user_id'])) {
+            $customDomain = app(\App\Services\CustomDomainService::class)
+                ->resolveVerifiedDomainForEngagyo(
+                    (int) $validated['user_id'],
+                    (int) $validated['custom_domain_id']
+                );
+
+            if (! $customDomain) {
+                // Also allow ShrtLnk-native ownership (user_id + no engagyo_user_id).
+                $customDomain = app(\App\Services\CustomDomainService::class)
+                    ->resolveVerifiedDomainForUserId(
+                        (int) $validated['user_id'],
+                        (int) $validated['custom_domain_id']
+                    );
+            }
+
+            if (! $customDomain) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Select a valid verified branded domain.',
+                ], 422);
+            }
+
+            $customDomainId = $customDomain->id;
+        }
 
         $result = $this->urlShortener->shortenPublic(
             $validated['original_url'],
@@ -46,6 +74,7 @@ class ShortLinkController extends Controller
             $validated['thumbnail_url'] ?? null,
             $validated['source'] ?? ShortLink::SOURCE_API,
             $cloaked,
+            $customDomainId,
         );
 
         if (! $result['success']) {

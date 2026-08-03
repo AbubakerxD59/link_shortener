@@ -14,6 +14,7 @@ class CustomDomain extends Model
 
     protected $fillable = [
         'user_id',
+        'engagyo_user_id',
         'domain',
         'domain_type',
         'base_domain',

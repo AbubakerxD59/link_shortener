@@ -21,7 +21,7 @@ class User extends Authenticatable
 
     public function customDomains(): HasMany
     {
-        return $this->hasMany(CustomDomain::class);
+        return $this->hasMany(CustomDomain::class)->whereNull('engagyo_user_id');
     }
 
     /**
